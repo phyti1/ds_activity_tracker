@@ -1,0 +1,1 @@
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker.UWP\ActivityTracker.UWP.csproj;x86

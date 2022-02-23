@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:m="clr-namespace:ActivityTracker.Models"
+             xmlns:vm="clr-namespace:ActivityTracker.ViewModels"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Xamarin.Forms;assembly=LiveChartsCore.SkiaSharpView.XamarinForms"
+             x:Class="ActivityTracker.MainPage">
+    <ContentPage.Resources>
+        <vm:ActivityTypeNameConverter x:Key="ActivityTypeNameConverter" />
+    </ContentPage.Resources>
+    <xct:DockLayout>
+        <Frame xct:DockLayout.Dock="Top" BackgroundColor="#2196F3" Padding="24" CornerRadius="0">
+            <Label Text="cdl1 Activity Tracker" HorizontalTextAlignment="Center" TextColor="White" FontSize="36" />
+        </Frame>
+        <xct:DockLayout xct:DockLayout.Dock="Top" Padding="30">
+            <Switch xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsEnabled}" />
+            <Picker SelectedItem="{Binding Source={x:Static m:Configuration.Instance}, Path=ActivityType, Converter={StaticResource ActivityTypeNameConverter}}" ItemsSource="{Binding ActivityNames}" />
+        </xct:DockLayout>
+        <lvc:CartesianChart xct:DockLayout.Dock="Top" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=Series}" HeightRequest="300"></lvc:CartesianChart>
+        <ScrollView Margin="30">
+            <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+        </ScrollView>
+    </xct:DockLayout>
+
+</ContentPage>

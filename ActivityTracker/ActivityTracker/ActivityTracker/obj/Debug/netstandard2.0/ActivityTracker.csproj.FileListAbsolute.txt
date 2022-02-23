@@ -1,0 +1,15 @@
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\bin\Debug\netstandard2.0\ActivityTracker.deps.json
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\bin\Debug\netstandard2.0\ActivityTracker.dll
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\bin\Debug\netstandard2.0\ref\ActivityTracker.dll
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\bin\Debug\netstandard2.0\ActivityTracker.pdb
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.csproj.AssemblyReference.cache
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\App.xaml.g.cs
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.AssemblyInfoInputs.cache
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.AssemblyInfo.cs
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.csproj.CoreCompileInputs.cache
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\XamlC.stamp
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.dll
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ref\ActivityTracker.dll
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\ActivityTracker.pdb
+C:\Projects\schule\activity_tracker\ActivityTracker\ActivityTracker\ActivityTracker\obj\Debug\netstandard2.0\Views\MainPage.xaml.g.cs
