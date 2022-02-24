@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
+using Xamarin.Forms;
 
 namespace ActivityTracker.Models
 {
@@ -137,16 +138,19 @@ namespace ActivityTracker.Models
         {
             _csvLog += $"{DateTime.Now.ToLocalTime().ToString()},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{location.Latitude},{location.Longitude}\r\n";
             //add ui series
-            _accelometer.Add(new ObservableValue(accelometer.X));
-            _magnetometer.Add(new ObservableValue(magnetometer.X));
-            if(_accelometer.Count > 100)
+            Device.BeginInvokeOnMainThread(() =>
             {
-                _accelometer.RemoveAt(0);
-            }
-            if(_magnetometer.Count > 100)
-            {
-                _magnetometer.RemoveAt(0);
-            }
+                _accelometer.Add(new ObservableValue(accelometer.X * accelometer.Y * accelometer.Z));
+                _magnetometer.Add(new ObservableValue(magnetometer.X * magnetometer.Y * magnetometer.Z));
+                if (_accelometer.Count > 100)
+                {
+                    _accelometer.RemoveAt(0);
+                }
+                if (_magnetometer.Count > 100)
+                {
+                    _magnetometer.RemoveAt(0);
+                }
+            });
         }
         public async Task SendResetLog()
         {

@@ -34,34 +34,57 @@ namespace ActivityTracker.Models
                 Thread.Sleep(100);
                 try
                 {
-                    ct.ThrowIfCancellationRequested();
-                    //accelometer
-                    if (!Accelerometer.IsMonitoring) { Accelerometer.Start(_speed); }
-                    if (!Magnetometer.IsMonitoring) { Magnetometer.Start(_speed); }
-                    var _location = await Geolocation.GetLastKnownLocationAsync();
-                    Console.WriteLine(_location);
-                    Configuration.Instance.AddLog(_lastAccelometerData, _lastMagentometerData, _location);
-                    _sendCounter += 1;
-                    if(_sendCounter > 100)
+                    while (true)
                     {
-                        Task.Run(async () =>
+                        ct.ThrowIfCancellationRequested();
+                        while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
                         {
-                            await Configuration.Instance.SendResetLog();
-                        }).GetAwaiter();
-                        _sendCounter = 0;
+                            bool _success = false;
+                            Device.BeginInvokeOnMainThread(async () =>
+                            {
+                                await Permissions.RequestAsync<Permissions.LocationAlways>();
+                                _success = true;
+                            });
+                            while (!_success)
+                            {
+                                Thread.Sleep(10);
+                            }
+                        }
+                        //accelometer
+                        if (!Accelerometer.IsMonitoring)
+                        {
+                            Accelerometer.Start(_speed);
+                        }
+                        if (!Magnetometer.IsMonitoring) { Magnetometer.Start(_speed); }
+                        var _location = await Geolocation.GetLastKnownLocationAsync();
+                        Console.WriteLine(_location);
+                        Configuration.Instance.AddLog(_lastAccelometerData, _lastMagentometerData, _location);
+                        _sendCounter += 1;
+                        if (_sendCounter > 100)
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Configuration.Instance.SendResetLog();
+                            }).GetAwaiter();
+                            _sendCounter = 0;
+                        }
                     }
+                }
+                catch (OperationCanceledException)
+                {
+
                 }
                 catch (Exception e)
                 {
                     // temporary
                     Configuration.Instance.Log += e + "\r\n";
-                    if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
-                    if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        Configuration.Instance.IsEnabled = false;
-                    });
                 }
+                if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
+                if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    Configuration.Instance.IsEnabled = false;
+                });
             });
         }
         public void Stop()
