@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Numerics;
 using System.Text;
+using System.Threading.Tasks;
 using Xamarin.Essentials;
 
 namespace ActivityTracker.Models
@@ -131,7 +132,7 @@ namespace ActivityTracker.Models
                 OnPropertyChanged();
             }
         }
-        private string _csvLog = "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long\r\n";
+        private string _csvLog; //= "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long\r\n";
         public void AddLog(Vector3 accelometer, Vector3 magnetometer, Location location)
         {
             _csvLog += $"{DateTime.Now.ToLocalTime().ToString()},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{location.Latitude},{location.Longitude}\r\n";
@@ -145,6 +146,16 @@ namespace ActivityTracker.Models
             if(_magnetometer.Count > 100)
             {
                 _magnetometer.RemoveAt(0);
+            }
+        }
+        public async Task SendResetLog()
+        {
+            var _localLog = _csvLog;
+            _csvLog = "";
+            var _success = await Database.SendData(_localLog);
+            if (!_success)
+            {
+                _csvLog = _localLog + _csvLog;
             }
         }
     }

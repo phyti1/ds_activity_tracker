@@ -44,9 +44,9 @@ namespace ActivityTracker.Models
                     _sendCounter += 1;
                     if(_sendCounter > 100)
                     {
-                        Task.Run(() =>
+                        Task.Run(async () =>
                         {
-                            //send data
+                            await Configuration.Instance.SendResetLog();
                         }).GetAwaiter();
                         _sendCounter = 0;
                     }
