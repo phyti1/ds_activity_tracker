@@ -31,25 +31,25 @@ namespace ActivityTracker.Models
             _worker = Task.Run(async () =>
             {
                 int _sendCounter = 0;
-                Thread.Sleep(100);
                 try
                 {
+                    while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
+                    {
+                        bool _success = false;
+                        Device.BeginInvokeOnMainThread(async () =>
+                        {
+                            await Permissions.RequestAsync<Permissions.LocationAlways>();
+                            _success = true;
+                        });
+                        while (!_success)
+                        {
+                            Thread.Sleep(10);
+                        }
+                    }
                     while (true)
                     {
                         ct.ThrowIfCancellationRequested();
-                        while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
-                        {
-                            bool _success = false;
-                            Device.BeginInvokeOnMainThread(async () =>
-                            {
-                                await Permissions.RequestAsync<Permissions.LocationAlways>();
-                                _success = true;
-                            });
-                            while (!_success)
-                            {
-                                Thread.Sleep(10);
-                            }
-                        }
+                        Thread.Sleep(100);
                         //accelometer
                         if (!Accelerometer.IsMonitoring)
                         {
