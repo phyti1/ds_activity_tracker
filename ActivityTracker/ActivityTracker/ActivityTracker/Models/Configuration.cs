@@ -4,7 +4,9 @@ using LiveChartsCore.SkiaSharpView;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Numerics;
 using System.Text;
+using Xamarin.Essentials;
 
 namespace ActivityTracker.Models
 {
@@ -33,17 +35,23 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
-
+        private DataAquisition _dataAquisition;
         private Configuration() : base(true)
         {
             Series = new ObservableCollection<ISeries>
             {
                 new LineSeries<ObservableValue>
                 {
-                    Values = _observableValues,
+                    Values = _accelometer,
                     //Fill = null
                 }
             };
+            Series.Add(new LineSeries<ObservableValue>
+            {
+                Values = _magnetometer,
+                //Fill = null
+            });
+            _dataAquisition = new DataAquisition();
         }
 
         private ActivityTypeE _activityType = ActivityTypeE.Idle;
@@ -63,9 +71,20 @@ namespace ActivityTracker.Models
             get => _isEnabled;
             set
             {
-                _isEnabled = value;
-                OnPropertyChanged();
-                Log += IsEnabled ? "Tracker started\r\n" : "Tracker stopped\r\n";
+                if(value != _isEnabled)
+                {
+                    if (value)
+                    {
+                        _dataAquisition.Start();
+                    }
+                    else
+                    {
+                        _dataAquisition.Stop();
+                    }
+                    _isEnabled = value;
+                    OnPropertyChanged();
+                    Log += IsEnabled ? "Tracker started\r\n" : "Tracker stopped\r\n";
+                }
             }
         }
 
@@ -99,6 +118,9 @@ namespace ActivityTracker.Models
             new ObservableValue(3)
         };
 
+        private ObservableCollection<ObservableValue> _accelometer = new ObservableCollection<ObservableValue>();
+        private ObservableCollection<ObservableValue> _magnetometer = new ObservableCollection<ObservableValue>();
+
         private ObservableCollection<ISeries> _series;
         public ObservableCollection<ISeries> Series 
         {
@@ -107,6 +129,22 @@ namespace ActivityTracker.Models
             {
                 _series = value;
                 OnPropertyChanged();
+            }
+        }
+        private string _csvLog = "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long\r\n";
+        public void AddLog(Vector3 accelometer, Vector3 magnetometer, Location location)
+        {
+            _csvLog += $"{DateTime.Now.ToLocalTime().ToString()},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{location.Latitude},{location.Longitude}\r\n";
+            //add ui series
+            _accelometer.Add(new ObservableValue(accelometer.X));
+            _magnetometer.Add(new ObservableValue(magnetometer.X));
+            if(_accelometer.Count > 100)
+            {
+                _accelometer.RemoveAt(0);
+            }
+            if(_magnetometer.Count > 100)
+            {
+                _magnetometer.RemoveAt(0);
             }
         }
     }
