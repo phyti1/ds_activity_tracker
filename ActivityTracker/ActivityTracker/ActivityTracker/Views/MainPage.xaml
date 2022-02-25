@@ -15,6 +15,7 @@
         </Frame>
         <xct:DockLayout xct:DockLayout.Dock="Top" Padding="30">
             <Switch xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsEnabled}" />
+            <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
             <Picker SelectedItem="{Binding Source={x:Static m:Configuration.Instance}, Path=ActivityType, Converter={StaticResource ActivityTypeNameConverter}}" ItemsSource="{Binding ActivityNames}" />
         </xct:DockLayout>
         <lvc:CartesianChart xct:DockLayout.Dock="Top" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=Series}" HeightRequest="300" ></lvc:CartesianChart>
@@ -22,5 +23,4 @@
             <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
         </ScrollView>
     </xct:DockLayout>
-
 </ContentPage>
