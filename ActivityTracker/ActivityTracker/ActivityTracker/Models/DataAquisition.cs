@@ -28,6 +28,13 @@ namespace ActivityTracker.Models
             OrientationSensor.ReadingChanged += OrientationSensor_ReadingChanged;
             Gyroscope.ReadingChanged += Gyroscope_ReadingChanged;
         }
+        ~DataAquisition()
+        {
+            if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
+            if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
+            if (OrientationSensor.IsMonitoring) { OrientationSensor.Stop(); }
+            if (Gyroscope.IsMonitoring) { Gyroscope.Stop(); }
+        }
 
         public void Start()
         {
@@ -35,6 +42,12 @@ namespace ActivityTracker.Models
             CancellationToken ct = _src.Token;
             _worker = Task.Run(async () =>
             {
+                //start delay
+                Thread.Sleep(10000);
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    Configuration.Instance.Log += "Measurement starting\r\n";
+                });
                 int _sendCounter = 0;
                 try
                 {
@@ -48,6 +61,7 @@ namespace ActivityTracker.Models
                     while (true)
                     {
                         ct.ThrowIfCancellationRequested();
+                        // log measurement every 10 ms
                         Thread.Sleep(10);
                         if (!Accelerometer.IsMonitoring){ Accelerometer.Start(_speed); }
                         if (!Magnetometer.IsMonitoring) { Magnetometer.Start(_speed); }

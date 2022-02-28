@@ -153,7 +153,7 @@ namespace ActivityTracker.Models
         private string _csvLog; //= "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long\r\n";
         public void AddLog(Vector3 accelometer, Vector3 magnetometer, Vector3 _gyroscopeData, Quaternion _orientationData, Location location)
         {
-            _csvLog += $"{DateTime.Now.ToLocalTime().ToString()},{Name},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{_gyroscopeData.X},{_gyroscopeData.Y},{_gyroscopeData.Z},{_orientationData.X},{_orientationData.Y},{_orientationData.Z},{_orientationData.W},{location?.Latitude},{location?.Longitude}\r\n";
+            _csvLog += $"{DateTime.Now.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss.fff")},{Name},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{_gyroscopeData.X},{_gyroscopeData.Y},{_gyroscopeData.Z},{_orientationData.X},{_orientationData.Y},{_orientationData.Z},{_orientationData.W},{location?.Latitude},{location?.Longitude}\r\n";
             //add ui series
             Device.BeginInvokeOnMainThread(() =>
             {
@@ -177,6 +177,17 @@ namespace ActivityTracker.Models
             if (!_success)
             {
                 _csvLog = _localLog + _csvLog;
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    Log += "Data sending failure, retrying next time\r\n";
+                });
+            }
+            else
+            {
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    Log += "Data sent\r\n";
+                });
             }
         }
     }
