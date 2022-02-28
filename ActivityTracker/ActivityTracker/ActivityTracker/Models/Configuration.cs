@@ -173,7 +173,7 @@ namespace ActivityTracker.Models
         {
             var _localLog = _csvLog;
             _csvLog = "";
-            var _success = await CloudHelper.UploadCSV(_localLog, Guid.NewGuid().ToString());
+            var _success = await Database.SendData(_localLog);
             if (!_success)
             {
                 _csvLog = _localLog + _csvLog;

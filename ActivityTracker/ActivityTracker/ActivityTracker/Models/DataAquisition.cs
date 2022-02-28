@@ -38,19 +38,13 @@ namespace ActivityTracker.Models
                 int _sendCounter = 0;
                 try
                 {
-                    while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
+                    Device.BeginInvokeOnMainThread(async () =>
                     {
-                        bool _success = false;
-                        Device.BeginInvokeOnMainThread(async () =>
+                        while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
                         {
                             await Permissions.RequestAsync<Permissions.LocationAlways>();
-                            _success = true;
-                        });
-                        while (!_success)
-                        {
-                            Thread.Sleep(10);
                         }
-                    }
+                    });
                     while (true)
                     {
                         ct.ThrowIfCancellationRequested();
