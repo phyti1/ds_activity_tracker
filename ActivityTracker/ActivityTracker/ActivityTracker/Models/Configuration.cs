@@ -17,12 +17,14 @@ namespace ActivityTracker.Models
     {
         public enum ActivityTypeE
         {
-            Idle,
+            Sitting,
             Walking,
             Jogging,
             Running,
-            Bicicling,
+            Bicycling,
             Elevatoring,
+            Stairway,
+            Transport,
         }
 
         static Configuration _instance = null;
@@ -56,7 +58,7 @@ namespace ActivityTracker.Models
             _dataAquisition = new DataAquisition();
         }
 
-        private ActivityTypeE _activityType = ActivityTypeE.Idle;
+        private ActivityTypeE _activityType = ActivityTypeE.Sitting;
         public ActivityTypeE ActivityType
         {
             get => _activityType;

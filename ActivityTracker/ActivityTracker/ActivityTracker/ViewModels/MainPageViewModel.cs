@@ -9,12 +9,13 @@ namespace ActivityTracker.ViewModels
     {
         internal static Dictionary<ActivityTypeE, string> ActivityNameMapping = new Dictionary<ActivityTypeE, string>()
         {
-            {ActivityTypeE.Idle, "Idle" },
+            {ActivityTypeE.Sitting, "Stehen/Sitzen" },
             {ActivityTypeE.Walking, "Spazieren" },
             {ActivityTypeE.Jogging, "Joggen" },
-            {ActivityTypeE.Running, "Rennen" },
-            {ActivityTypeE.Bicicling, "Fahhrad fahren" },
-            {ActivityTypeE.Elevatoring, "Lift fahren" }
+            {ActivityTypeE.Bicycling, "Fahhrad fahren" },
+            {ActivityTypeE.Elevatoring, "Lift fahren" },
+            {ActivityTypeE.Stairway, "Treppen steigen" },
+            {ActivityTypeE.Transport, "Fahrzeug fahren" },
         };
 
         public List<string> ActivityNames
