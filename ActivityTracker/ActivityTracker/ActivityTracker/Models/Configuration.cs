@@ -5,15 +5,18 @@ using LiveChartsCore.SkiaSharpView;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
+using XamarinForms.LocationService.Messages;
 
 namespace ActivityTracker.Models
 {
-    class Configuration : BaseClass
+    public class Configuration : BaseClass
     {
         public enum ActivityTypeE
         {
@@ -39,42 +42,79 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
-        private DataAquisition _dataAquisition;
+        public DataAquisition DataAquisition { get; private set; }
         private Configuration() : base(true)
         {
-            Series = new ObservableCollection<ISeries>
+            ResetGraphs();
+            DataAquisition = new DataAquisition();
+        }
+        public void ResetGraphs()
+        {
+            VisLeft = new ObservableCollection<ISeries>
             {
                 new LineSeries<ObservableValue>
                 {
                     Values = _accelometer,
-                    //Fill = null
+                    //Fill = 
                 }
             };
-            Series.Add(new LineSeries<ObservableValue>
+            VisRight = new ObservableCollection<ISeries>
             {
-                Values = _magnetometer,
-                //Fill = null
-            });
-            _dataAquisition = new DataAquisition();
+                new LineSeries<ObservableValue>
+                {
+                    Values = _magnetometer,
+                }
+            };
+            _accelometer.Clear();
+            _magnetometer.Clear();
         }
 
-        private ActivityTypeE _activityType = ActivityTypeE.Sitting;
+        private ActivityTypeE? _activityType = null;
         public ActivityTypeE ActivityType
         {
-            get => _activityType;
+            get
+            {
+                if(_activityType == null)
+                {
+                    var _result = SecureStorage.GetAsync(nameof(ActivityType)).Result;
+                    if(_result != null)
+                    {
+                        _activityType = (ActivityTypeE)Convert.ToInt32(_result);
+                    }
+                    else
+                    {
+                        _activityType = ActivityTypeE.Sitting;
+                    }
+                }
+                //saving does not work as ui saves default 
+                return (ActivityTypeE)_activityType;
+            }
             set
             {
                 _activityType = value;
+                SecureStorage.SetAsync(nameof(ActivityType), Convert.ToString((int)_activityType.Value));
                 OnPropertyChanged();
             }
         }
-        private string _name = "";
+        private string _name = null;
         public string Name
         {
-            get => _name;
+            get
+            {
+                if(_name == null)
+                {
+                    var _result = SecureStorage.GetAsync(nameof(Name)).Result;
+                    if (_result != null)
+                    {
+                        _name = _result;
+                    }
+                }
+                return _name;
+            }
             set
             {
                 _name = value;
+                SecureStorage.SetAsync(nameof(Name), _name);
                 OnPropertyChanged();
             }
         }
@@ -89,22 +129,35 @@ namespace ActivityTracker.Models
                 {
                     if (string.IsNullOrWhiteSpace(Name))
                     {
-                        Log += "Name cannot be empty\r\n";
+                        Log += "Name cannot be empty";
                         OnPropertyChanged();
                     }
                     else
                     {
                         if (value)
                         {
-                            _dataAquisition.Start();
+                            MessagingCenter.Send(new StartServiceMessage(), "ServiceStarted");
+                            //_dataAquisition.Start();
+                            Vibration.Vibrate(TimeSpan.FromSeconds(1));
                         }
                         else
                         {
-                            _dataAquisition.Stop();
+                            MessagingCenter.Send(new StopServiceMessage(), "ServiceStopped");
+                            //_dataAquisition.Stop();
+                            // reset visualization
+                            while (Instance.DataAquisition.IsWorkerRunning())
+                            {
+                                Thread.Sleep(10);
+                            }
+                            ResetGraphs();
+                            Vibration.Vibrate(TimeSpan.FromSeconds(1));
+                            //wait for 1st vibration to end and add a pause
+                            Thread.Sleep(1100);
+                            Vibration.Vibrate(TimeSpan.FromSeconds(1));
                         }
                         _isEnabled = value;
                         OnPropertyChanged();
-                        Log += IsEnabled ? "Tracker started\r\n" : "Tracker stopped\r\n";
+                        Log += IsEnabled ? "Tracker started" : "Tracker stopped";
                     }
                 }
             }
@@ -116,7 +169,7 @@ namespace ActivityTracker.Models
             get => _log;
             set
             {
-                _log = value;
+                _log = value + "\r\n";
                 OnPropertyChanged();
             }
         }
@@ -142,25 +195,38 @@ namespace ActivityTracker.Models
         private ObservableCollection<ObservableValue> _accelometer = new ObservableCollection<ObservableValue>();
         private ObservableCollection<ObservableValue> _magnetometer = new ObservableCollection<ObservableValue>();
 
-        private ObservableCollection<ISeries> _series;
-        public ObservableCollection<ISeries> Series 
+        private ObservableCollection<ISeries> _visLeft;
+        public ObservableCollection<ISeries> VisLeft 
         {
-            get => _series;
+            get => _visLeft;
             set
             {
-                _series = value;
+                _visLeft = value;
                 OnPropertyChanged();
             }
         }
-        private string _csvLog; //= "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long\r\n";
+        private ObservableCollection<ISeries> _visRight;
+        public ObservableCollection<ISeries> VisRight 
+        {
+            get => _visRight;
+            set
+            {
+                _visRight = value;
+                OnPropertyChanged();
+            }
+        }
+        private string _csvLog; //= "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long";
+        private double _lastAcc = 0;
         public void AddLog(Vector3 accelometer, Vector3 magnetometer, Vector3 _gyroscopeData, Quaternion _orientationData, Location location)
         {
             _csvLog += $"{DateTime.Now.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss.fff")},{Name},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{_gyroscopeData.X},{_gyroscopeData.Y},{_gyroscopeData.Z},{_orientationData.X},{_orientationData.Y},{_orientationData.Z},{_orientationData.W},{location?.Latitude},{location?.Longitude}\r\n";
             //add ui series
             Device.BeginInvokeOnMainThread(() =>
             {
-                _accelometer.Add(new ObservableValue(Math.Abs(accelometer.X) + Math.Abs(accelometer.Y) + Math.Abs(accelometer.Z) / 10000) );
-                _magnetometer.Add(new ObservableValue(Math.Abs(magnetometer.X) + Math.Abs(magnetometer.Y) * magnetometer.Z));
+                var _newAcc = Math.Abs(accelometer.X) + Math.Abs(accelometer.Y) + Math.Abs(accelometer.Z);
+                _accelometer.Add(new ObservableValue(_newAcc - _lastAcc));
+                _lastAcc = _newAcc;
+                _magnetometer.Add(new ObservableValue(Math.Abs(magnetometer.X) + Math.Abs(magnetometer.Y) + Math.Abs(magnetometer.Z)));
                 if (_accelometer.Count > 100)
                 {
                     _accelometer.RemoveAt(0);
@@ -181,16 +247,18 @@ namespace ActivityTracker.Models
                 _csvLog = _localLog + _csvLog;
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Log += "Data sending failure, retrying next time\r\n";
+                    Log += "Data sending failure, retrying next time";
                 });
             }
             else
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Log += "Data sent\r\n";
+                    Log += "Data sent";
                 });
             }
+            //short feedback
+            Vibration.Vibrate(TimeSpan.FromMilliseconds(100));
         }
     }
 

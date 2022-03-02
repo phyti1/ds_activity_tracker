@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ActivityTracker.Models
 {
-    class BaseClass : INotifyPropertyChanged
+    public class BaseClass : INotifyPropertyChanged
     {
         bool _serializeOnPropertyChanged;
         public BaseClass(bool serializeOnPropertyChanged)

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ActivityTracker.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Xamarin.Forms;
 using static ActivityTracker.Models.Configuration;
 
-namespace ActivityTracker.ViewModels
+namespace ActivityTracker.Models
 {
     public class InverseBoolConverter : IValueConverter
     {
@@ -29,7 +30,7 @@ namespace ActivityTracker.ViewModels
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if(value == null) 
-            { 
+            {
                 //default
                 return Models.Configuration.Instance.ActivityType; 
             }

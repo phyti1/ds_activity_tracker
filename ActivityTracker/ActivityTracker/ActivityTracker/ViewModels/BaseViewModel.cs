@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using ActivityTracker.Models;
 
-namespace ActivityTracker.ViewModels
+namespace ActivityTracker.Models
 {
     class BaseViewModel : Models.BaseClass
     {

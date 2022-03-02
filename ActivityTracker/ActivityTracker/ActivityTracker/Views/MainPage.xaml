@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
              xmlns:m="clr-namespace:ActivityTracker.Models"
-             xmlns:vm="clr-namespace:ActivityTracker.ViewModels"
+             xmlns:vm="clr-namespace:ActivityTracker.Models"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Xamarin.Forms;assembly=LiveChartsCore.SkiaSharpView.XamarinForms"
              x:Class="ActivityTracker.MainPage">
     <ContentPage.Resources>
@@ -18,7 +18,14 @@
             <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
             <Picker SelectedItem="{Binding Source={x:Static m:Configuration.Instance}, Path=ActivityType, Converter={StaticResource ActivityTypeNameConverter}}" ItemsSource="{Binding ActivityNames}" />
         </xct:DockLayout>
-        <lvc:CartesianChart xct:DockLayout.Dock="Top" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=Series}" HeightRequest="300" ></lvc:CartesianChart>
+        <Grid xct:DockLayout.Dock="Top" HeightRequest="150">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <lvc:CartesianChart Grid.Column="0" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=VisLeft}"></lvc:CartesianChart>
+            <lvc:CartesianChart Grid.Column="1" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=VisRight}"></lvc:CartesianChart>
+        </Grid>
         <ScrollView Margin="30">
             <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
         </ScrollView>

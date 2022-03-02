@@ -1,9 +1,7 @@
-﻿using LiveChartsCore.Defaults;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
@@ -11,9 +9,17 @@ using Xamarin.Forms;
 
 namespace ActivityTracker.Models
 {
-    class DataAquisition
+    public class DataAquisition
     {
-        private static Task _worker;
+        private Task _worker;
+        public bool IsWorkerRunning()
+        {
+            if(!_worker.IsCanceled && !_worker.IsCompleted && _worker.Status != TaskStatus.WaitingForActivation)
+            {
+                return true;
+            }
+            return false;
+        }
         private CancellationTokenSource _src;
         private SensorSpeed _speed = SensorSpeed.Fastest;
         private List<Vector3> _magentometerData = new List<Vector3>();
@@ -43,12 +49,12 @@ namespace ActivityTracker.Models
             _worker = Task.Run(async () =>
             {
                 //start delay
-                Thread.Sleep(10000);
+                //Thread.Sleep(10000);
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Configuration.Instance.Log += "Measurement starting\r\n";
+                    Configuration.Instance.Log += "Measurement starting";
                 });
-                int _sendCounter = 0;
+                int _msCounter = 0;
                 try
                 {
                     Device.BeginInvokeOnMainThread(async () =>
@@ -62,27 +68,47 @@ namespace ActivityTracker.Models
                     {
                         ct.ThrowIfCancellationRequested();
                         // log measurement every 10 ms
-                        Thread.Sleep(10);
-                        if (!Accelerometer.IsMonitoring){ Accelerometer.Start(_speed); }
+                        Thread.Sleep(50);
+                        if (!Accelerometer.IsMonitoring) { Accelerometer.Start(_speed); }
                         if (!Magnetometer.IsMonitoring) { Magnetometer.Start(_speed); }
                         if (!OrientationSensor.IsMonitoring) { OrientationSensor.Start(_speed); }
                         if (!Gyroscope.IsMonitoring) { Gyroscope.Start(_speed); }
 
                         var _location = await Geolocation.GetLastKnownLocationAsync();
-                        if(_location == null)
+                        ct.ThrowIfCancellationRequested();
+                        if (_location == null)
                         {
-                            Configuration.Instance.Log += "Location returned null\r\n";
+                            Configuration.Instance.Log += "Location returned null";
                         }
                         Console.WriteLine(_location);
-                        Configuration.Instance.AddLog(GetMedian(_accelometerData), GetMedian(_magentometerData), GetMedian(_gyroscopeData), GetMedian(_orientationData), _location);
-                        _sendCounter += 1;
-                        if (_sendCounter > 100)
+                        if(_accelometerData.Count() > 0 && _magentometerData.Count() > 0 && _gyroscopeData.Count() > 0 && _orientationData.Count() > 0)
+                        {
+                            Configuration.Instance.AddLog(GetMedian(_accelometerData), GetMedian(_magentometerData), GetMedian(_gyroscopeData), GetMedian(_orientationData), _location);
+                            Console.WriteLine($"{_accelometerData.Count()},{_magentometerData.Count()},{_gyroscopeData.Count()},{_orientationData.Count()}");
+                            _accelometerData.Clear();
+                            _magentometerData.Clear();
+                            _gyroscopeData.Clear();
+                            _orientationData.Clear();
+                        }
+                        else
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            Device.BeginInvokeOnMainThread(() =>
+                            {
+                                if (!ct.IsCancellationRequested)
+                                {
+                                    Configuration.Instance.Log += "no data";
+                                }
+                            });
+                        }
+                        _msCounter += 50;
+                        if (_msCounter > 10000)
                         {
                             Task.Run(async () =>
                             {
                                 await Configuration.Instance.SendResetLog();
                             }).GetAwaiter();
-                            _sendCounter = 0;
+                            _msCounter = 0;
                         }
                     }
                 }
@@ -92,12 +118,15 @@ namespace ActivityTracker.Models
                 catch (Exception e)
                 {
                     // temporary
-                    Configuration.Instance.Log += e + "\r\n";
+                    Configuration.Instance.Log += e;
                 }
                 if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
                 if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
                 if (OrientationSensor.IsMonitoring) { OrientationSensor.Stop(); }
                 if (Gyroscope.IsMonitoring) { Gyroscope.Stop(); }
+
+                //send log after cancellation
+                await Configuration.Instance.SendResetLog();
 
                 Device.BeginInvokeOnMainThread(() =>
                 {
@@ -111,7 +140,7 @@ namespace ActivityTracker.Models
             // wait for cancellation to complete
             Task.Run(() =>
             {
-                while (!_worker.IsCanceled && !_worker.IsCompleted)
+                while (IsWorkerRunning())
                 {
                     Thread.Sleep(10);
                 }
@@ -128,7 +157,7 @@ namespace ActivityTracker.Models
         //DateTime _last = DateTime.Now;
         void Magnetometer_ReadingChanged(object sender, MagnetometerChangedEventArgs e)
         {
-            //Configuration.Instance.Log += (DateTime.Now - _last).ToString() + "\r\n";
+            //Configuration.Instance.Log += (DateTime.Now - _last).ToString();
             var data = e.Reading;
             // Process MagneticField X, Y, and Z
             Console.WriteLine($"Magnetometer: X: {data.MagneticField.X}, Y: {data.MagneticField.Y}, Z: {data.MagneticField.Z}");

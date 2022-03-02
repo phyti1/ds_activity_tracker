@@ -1,4 +1,5 @@
-﻿using ActivityTracker.ViewModels;
+﻿using ActivityTracker.Models;
+using ActivityTracker.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
