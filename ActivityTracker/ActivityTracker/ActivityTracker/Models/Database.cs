@@ -12,11 +12,11 @@ namespace ActivityTracker.Models
     {
         public static async Task<bool> SendData(string data)
         {
-//#if DEBUG
-//            return true;
-//#endif
+            //#if DEBUG
+            //            return true;
+            //#endif
 
-            var filename = Guid.NewGuid().ToString();
+            var filename = $"{Configuration.Instance.Name}_{Configuration.Instance.ActivityType}_{Configuration.Instance.MeasGuid}";
             var _url = $"https://activityprofiles.blob.core.windows.net/app/{filename}?sv=2020-08-04&ss=bf&srt=o&sp=rwdlacitfx&se=2022-09-01T03:14:13Z&st=2022-02-27T20:14:13Z&spr=https&sig=XbB7tjMVVuPbzjih3YX6Kj4ugoWBNfW836NG%2Bz5RyQA%3D";
             var _response = await PutContent(_url, data);
             if(_response == HttpStatusCode.Created)

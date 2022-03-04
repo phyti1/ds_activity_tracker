@@ -42,6 +42,7 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
+        internal string MeasGuid { get; private set; }
         public DataAquisition DataAquisition { get; private set; }
         private Configuration() : base(true)
         {
@@ -94,6 +95,7 @@ namespace ActivityTracker.Models
                 _activityType = value;
                 SecureStorage.SetAsync(nameof(ActivityType), Convert.ToString((int)_activityType.Value));
                 OnPropertyChanged();
+                MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
             }
         }
         private string _name = null;
@@ -139,6 +141,7 @@ namespace ActivityTracker.Models
                             MessagingCenter.Send(new StartServiceMessage(), "ServiceStarted");
                             //_dataAquisition.Start();
                             Vibration.Vibrate(TimeSpan.FromSeconds(1));
+                            MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
                         }
                         else
                         {
