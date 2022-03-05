@@ -42,6 +42,7 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
+        internal int MeasIndex = 0;
         internal string MeasGuid { get; private set; }
         public DataAquisition DataAquisition { get; private set; }
         private Configuration() : base(true)
@@ -96,6 +97,7 @@ namespace ActivityTracker.Models
                 SecureStorage.SetAsync(nameof(ActivityType), Convert.ToString((int)_activityType.Value));
                 OnPropertyChanged();
                 MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
+                MeasIndex = 0;
             }
         }
         private string _name = null;
@@ -142,6 +144,7 @@ namespace ActivityTracker.Models
                             //_dataAquisition.Start();
                             Vibration.Vibrate(TimeSpan.FromSeconds(1));
                             MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
+                            MeasIndex = 0;
                         }
                         else
                         {
@@ -257,7 +260,7 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Log += "Data sent";
+                    Log += $"Data sent ({MeasIndex})";
                 });
             }
             //short feedback
