@@ -57,13 +57,20 @@ namespace ActivityTracker.Models
                 int _msCounter = 0;
                 try
                 {
+                    bool _permissionGranted = false;
                     Device.BeginInvokeOnMainThread(async () =>
                     {
                         while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
                         {
                             await Permissions.RequestAsync<Permissions.LocationAlways>();
                         }
+                        _permissionGranted = true;
                     });
+                    // wait until permission is granted
+                    while (!_permissionGranted)
+                    {
+                        Thread.Sleep(1);
+                    }
                     while (true)
                     {
                         ct.ThrowIfCancellationRequested();
