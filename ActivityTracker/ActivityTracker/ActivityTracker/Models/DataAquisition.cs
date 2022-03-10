@@ -12,9 +12,12 @@ namespace ActivityTracker.Models
     public class DataAquisition
     {
         private Task _worker;
-        public bool IsWorkerRunning()
+        private Task _geoWorker;
+        private Location _location = Geolocation.GetLastKnownLocationAsync().Result;
+        public bool AreWorkersRunning()
         {
-            if(!_worker.IsCanceled && !_worker.IsCompleted && _worker.Status != TaskStatus.WaitingForActivation)
+            if(!_worker.IsCanceled && !_worker.IsCompleted && _worker.Status != TaskStatus.WaitingForActivation &&
+               !_geoWorker.IsCanceled && !_geoWorker.IsCompleted && _geoWorker.Status != TaskStatus.WaitingForActivation)
             {
                 return true;
             }
@@ -57,20 +60,6 @@ namespace ActivityTracker.Models
                 int _msCounter = 0;
                 try
                 {
-                    bool _permissionGranted = false;
-                    Device.BeginInvokeOnMainThread(async () =>
-                    {
-                        while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
-                        {
-                            await Permissions.RequestAsync<Permissions.LocationAlways>();
-                        }
-                        _permissionGranted = true;
-                    });
-                    // wait until permission is granted
-                    while (!_permissionGranted)
-                    {
-                        Thread.Sleep(1);
-                    }
                     while (true)
                     {
                         ct.ThrowIfCancellationRequested();
@@ -81,13 +70,7 @@ namespace ActivityTracker.Models
                         if (!OrientationSensor.IsMonitoring) { OrientationSensor.Start(_speed); }
                         if (!Gyroscope.IsMonitoring) { Gyroscope.Start(_speed); }
 
-                        var _location = await Geolocation.GetLastKnownLocationAsync();
                         ct.ThrowIfCancellationRequested();
-                        if (_location == null)
-                        {
-                            Configuration.Instance.Log += "Location returned null";
-                        }
-                        Console.WriteLine(_location);
                         if(_accelometerData.Count() > 0 && _magentometerData.Count() > 0 && _gyroscopeData.Count() > 0 && _orientationData.Count() > 0)
                         {
                             Configuration.Instance.AddLog(GetMedian(_accelometerData), GetMedian(_magentometerData), GetMedian(_gyroscopeData), GetMedian(_orientationData), _location);
@@ -140,6 +123,42 @@ namespace ActivityTracker.Models
                     Configuration.Instance.IsEnabled = false;
                 });
             });
+            _geoWorker = Task.Run(async () =>
+            {
+                bool _permissionGranted = false;
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    while (await Permissions.CheckStatusAsync<Permissions.LocationAlways>() != PermissionStatus.Granted)
+                    {
+                        await Permissions.RequestAsync<Permissions.LocationAlways>();
+                    }
+                    _permissionGranted = true;
+                });
+                // wait until permission is granted
+                while (!_permissionGranted)
+                {
+                    Thread.Sleep(1);
+                }
+                while (true)
+                {
+                    try
+                    {
+                        //var _oldTime = DateTime.Now;
+                        _location = await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Best));
+                        //var _diff = DateTime.Now - _oldTime;
+                        ct.ThrowIfCancellationRequested();
+                        if (_location == null)
+                        {
+                            Configuration.Instance.Log += "Location returned null";
+                        }
+                        Console.WriteLine(_location);
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+            });
         }
         public void Stop()
         {
@@ -147,7 +166,7 @@ namespace ActivityTracker.Models
             // wait for cancellation to complete
             Task.Run(() =>
             {
-                while (IsWorkerRunning())
+                while (AreWorkersRunning())
                 {
                     Thread.Sleep(10);
                 }

@@ -151,7 +151,7 @@ namespace ActivityTracker.Models
                             MessagingCenter.Send(new StopServiceMessage(), "ServiceStopped");
                             //_dataAquisition.Stop();
                             // reset visualization
-                            while (Instance.DataAquisition.IsWorkerRunning())
+                            while (Instance.DataAquisition.AreWorkersRunning())
                             {
                                 Thread.Sleep(10);
                             }
