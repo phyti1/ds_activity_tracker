@@ -221,7 +221,7 @@ namespace ActivityTracker.Models
                 OnPropertyChanged();
             }
         }
-        private string _csvLog; //= "datetime,activity,acc_x,acc_y,acc_z,mag_x,mag_y,mag_z,lat,long";
+        private string _csvLog;
         private double _lastAcc = 0;
         public void AddLog(Vector3 accelometer, Vector3 magnetometer, Vector3 _gyroscopeData, Quaternion _orientationData, Location location)
         {
