@@ -4,6 +4,10 @@
 # Visual Studio (>=2015) project-specific, machine local files
 .vs/
 
+# remove test.npz and train.npz
+test.npz
+train.npz
+
 # User-specific files
 *.suo
 *.user
