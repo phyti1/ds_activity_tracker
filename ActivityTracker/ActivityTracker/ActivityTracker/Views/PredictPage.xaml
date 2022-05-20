@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:ActivityTracker.Models"
+             xmlns:vm="clr-namespace:ActivityTracker.ViewModels"
+             xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+             x:Class="ActivityTracker.Views.PredictPage" Title="Predict Activity">
+    <ContentPage.Resources>
+        <vm:PredictionEmojiConverter x:Key="PredictionEmojiConverter" />
+        <vm:EnumNameConverter x:Key="EnumNameConverter" />
+    </ContentPage.Resources>
+    <ContentPage.Content>
+        <xct:DockLayout>
+            <xct:DockLayout xct:DockLayout.Dock="Top" Padding="30">
+                <Switch xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsPredicting}" />
+                <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
+                <Picker SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModel, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
+            </xct:DockLayout>
+            <Label FontSize="50" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Prediction, Converter={StaticResource PredictionEmojiConverter}}" />
+        </xct:DockLayout>
+    </ContentPage.Content>
+</ContentPage>

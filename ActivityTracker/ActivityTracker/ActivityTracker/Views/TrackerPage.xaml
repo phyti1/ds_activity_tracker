@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:xct="http://xamarin.com/schemas/2020/toolkit"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Xamarin.Forms;assembly=LiveChartsCore.SkiaSharpView.XamarinForms"
+             xmlns:m="clr-namespace:ActivityTracker.Models"
+             xmlns:vm="clr-namespace:ActivityTracker.ViewModels"
+             x:Class="ActivityTracker.Views.TrackerPage" Title="Track Activity">
+    <ContentPage.Resources>
+        <vm:ActivityTypeNameConverter x:Key="ActivityTypeNameConverter" />
+    </ContentPage.Resources>
+    <ContentPage.Content>
+        <xct:DockLayout>
+            <xct:DockLayout xct:DockLayout.Dock="Top" Padding="30">
+                <Switch xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsTracking}" />
+                <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
+                <Picker SelectedItem="{Binding Source={x:Static m:Configuration.Instance}, Path=ActivityType, Converter={StaticResource ActivityTypeNameConverter}}" ItemsSource="{Binding ActivityNames}" />
+            </xct:DockLayout>
+            <Grid xct:DockLayout.Dock="Top" HeightRequest="150">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <lvc:CartesianChart Grid.Column="0" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=VisLeft}"></lvc:CartesianChart>
+                <lvc:CartesianChart Grid.Column="1" Series="{Binding Source={x:Static m:Configuration.Instance}, Path=VisRight}"></lvc:CartesianChart>
+            </Grid>
+            <ScrollView Margin="30">
+                <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+            </ScrollView>
+        </xct:DockLayout>
+    </ContentPage.Content>
+</ContentPage>

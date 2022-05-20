@@ -39,6 +39,9 @@ namespace ActivityTracker.Models
         }
         ~DataAquisition()
         {
+            // This is very essential, the phone sensors can hang up if the tracking is not stopped on closing.
+            // Only a complete restart will restart the sensors.
+
             if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
             if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
             if (OrientationSensor.IsMonitoring) { OrientationSensor.Stop(); }
@@ -47,6 +50,10 @@ namespace ActivityTracker.Models
 
         public void Start()
         {
+            Vibration.Vibrate(TimeSpan.FromSeconds(1));
+            Configuration.Instance.MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
+            Configuration.Instance.MeasIndex = 0;
+
             _src = new CancellationTokenSource();
             CancellationToken ct = _src.Token;
             _worker = Task.Run(async () =>
@@ -120,7 +127,7 @@ namespace ActivityTracker.Models
 
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Configuration.Instance.IsEnabled = false;
+                    Configuration.Instance.IsTracking = false;
                 });
             });
             _geoWorker = Task.Run(async () =>
