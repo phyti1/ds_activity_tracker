@@ -7,6 +7,8 @@
 # remove test.npz and train.npz
 test.npz
 train.npz
+train_savgol.npz
+test_savgol.npz
 
 # User-specific files
 *.suo
