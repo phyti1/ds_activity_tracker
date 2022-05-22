@@ -29,7 +29,20 @@ namespace ActivityTracker.Models
             Stairway,
             Transport,
         }
+        public enum RunTypeE
+        {
+            None,
+            Predict,
+            Track
+        }
+        public enum ModelTypeE
+        {
+            None,
+            SPR_RandomForest,
+            SPR_CNN1,
+            SPR_CNN2,
 
+        }
         static Configuration _instance = null;
         public static Configuration Instance
         {
@@ -42,8 +55,8 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
-        internal int MeasIndex = 0;
-        internal string MeasGuid { get; private set; }
+        public int MeasIndex = 0;
+        public string MeasGuid { get; internal set; }
         public DataAquisition DataAquisition { get; private set; }
         private Configuration() : base(true)
         {
@@ -100,6 +113,16 @@ namespace ActivityTracker.Models
                 MeasIndex = 0;
             }
         }
+        private ModelTypeE _selectedModel = ModelTypeE.None;
+        public ModelTypeE SelectedModel
+        {
+            get => _selectedModel;
+            set
+            {
+                _selectedModel = value;
+                OnPropertyChanged();
+            }
+        }
         private string _name = null;
         public string Name
         {
@@ -122,14 +145,13 @@ namespace ActivityTracker.Models
                 OnPropertyChanged();
             }
         }
-
-        private bool _isEnabled;
-        public bool IsEnabled
+        private bool _isTracking;
+        public bool IsTracking
         {
-            get => _isEnabled;
+            get => _isTracking;
             set
             {
-                if(value != _isEnabled)
+                if(value != _isTracking)
                 {
                     if (string.IsNullOrWhiteSpace(Name))
                     {
@@ -142,9 +164,6 @@ namespace ActivityTracker.Models
                         {
                             MessagingCenter.Send(new StartServiceMessage(), "ServiceStarted");
                             //_dataAquisition.Start();
-                            Vibration.Vibrate(TimeSpan.FromSeconds(1));
-                            MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
-                            MeasIndex = 0;
                         }
                         else
                         {
@@ -161,11 +180,44 @@ namespace ActivityTracker.Models
                             Thread.Sleep(1100);
                             Vibration.Vibrate(TimeSpan.FromSeconds(1));
                         }
-                        _isEnabled = value;
+                        _isTracking = value;
                         OnPropertyChanged();
-                        Log += IsEnabled ? "Tracker started" : "Tracker stopped";
+                        Log += IsTracking ? "Tracker started" : "Tracker stopped";
                     }
                 }
+            }
+        }
+        private bool _isPredicting = false;
+        public bool IsPredicting
+        {
+            get => _isPredicting;
+            set
+            {
+                if(value != _isPredicting)
+                {
+                    // do not run in background, start directly
+                    if (value)
+                    {
+                        DataAquisition.Start();
+                    }
+                    else
+                    {
+                        DataAquisition.Stop();
+                    }
+                    _isPredicting = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private string _prediction;
+        public string Prediction
+        {
+            get => _prediction;
+            set
+            {
+                _prediction = value;
+                OnPropertyChanged();
             }
         }
 
@@ -180,23 +232,6 @@ namespace ActivityTracker.Models
             }
         }
 
-        // LiveCharts already provides the LiveChartsCore.Defaults.ObservableValue class.
-        private readonly ObservableCollection<ObservableValue> _observableValues = new ObservableCollection<ObservableValue>
-        {
-            new ObservableValue(2),
-            new ObservableValue(5),
-            new ObservableValue(4),
-            new ObservableValue(5),
-            new ObservableValue(2),
-            new ObservableValue(6),
-            new ObservableValue(6),
-            new ObservableValue(6),
-            new ObservableValue(4),
-            new ObservableValue(2),
-            new ObservableValue(3),
-            new ObservableValue(4),
-            new ObservableValue(3)
-        };
 
         private ObservableCollection<ObservableValue> _accelometer = new ObservableCollection<ObservableValue>();
         private ObservableCollection<ObservableValue> _magnetometer = new ObservableCollection<ObservableValue>();
@@ -247,7 +282,20 @@ namespace ActivityTracker.Models
         {
             var _localLog = _csvLog;
             _csvLog = "";
-            var _success = await Database.SendData(_localLog);
+            bool _success = false;
+            if (IsPredicting)
+            {
+                string _prediction = await Database.PostPrediction(_localLog);
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    Prediction = _prediction;
+                });
+                _success = true;
+            }
+            if(IsTracking)
+            {
+                _success = await Database.SendTrackingData(_localLog);
+            }
             if (!_success)
             {
                 _csvLog = _localLog + _csvLog;
