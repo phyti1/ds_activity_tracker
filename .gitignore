@@ -9,6 +9,8 @@ test.npz
 train.npz
 train_savgol.npz
 test_savgol.npz
+96%model.pt
+97%model.pt
 
 # User-specific files
 *.suo
