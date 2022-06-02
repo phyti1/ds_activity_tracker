@@ -3,6 +3,7 @@ import flask
 import pandas as pd
 import numpy as np
 import os, io, json
+import torch
 from math import sin, cos, sqrt, atan2, radians
 
 app = flask.Flask(__name__)
@@ -12,6 +13,8 @@ model_path = "./Analyse/webservice/models/"
 if(not os.path.exists(model_path)):
     raise Exception("Model path does not exist")
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 models = dict()
 for root, dirs, files in os.walk(model_path):
   for file in files:
@@ -19,7 +22,9 @@ for root, dirs, files in os.walk(model_path):
           model_name = file.split(".")[0]
           # print(model_name)
           models[model_name] = pickle.load(open(model_path + file, 'rb'))
-
+      elif file.endswith(".pt"):
+          model_name = file.split(".")[0]
+          models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
@@ -35,14 +40,19 @@ def predict():
     df_test = pd.read_csv(buf, sep=',', header=None)
 
     df_test = prep_allgemein(df_test)
+
     
     if(post_content["model"] == "SPR_RandomForest"):
-      df_test = process_data_group_bienli(df_test)
+      df_test = groupby_gruppe_bienli(process_data_group_bienli(df_test))
       # TODO Modell mit 25 features trainieren
       prediction = models['rf_allprop'].predict(df_test.iloc[0, 2:].values.reshape((1, -1)))
 
     if(post_content["model"] == "SPR_CNN1"):
-      prediction = models['cnn_XYZ'].predict(df_test)
+      df_test = process_data_group_bienli(df_test)
+      #load model
+      tensors = transform_to_tensors(df_test)
+      prediction = predict_with_cnn_1(tensors, model = models['2022-05-07-01-28-13'], num_classes=7)
+
 
     if(post_content["model"] == "SPR_CNN2"):
       prediction = models['cnn2_XYZ'].predict(df_test)
@@ -106,6 +116,9 @@ def process_data_group_bienli(df):
   df.drop(columns=["lat", "long", "gps_differs"], inplace=True)
   
   df["kmh"] = df["kmh"].ffill().fillna(0)
+  return df
+
+def groupby_gruppe_bienli(df):
   
   old_time = pd.to_datetime("01.01.2022 00:00:00")
 
@@ -151,6 +164,55 @@ def get_distance(point1, point2):
   return distance
 
 
+def transform_to_tensors(df, window_size = 90, stride = 10):
+    '''
+    Transforms the dataframe into a 3d tensor of shape (X, 5, 90)
+    Args:
+        df (pandas DataFrame): dataframe with sensordata
+    Returns:
+        tensors (torch tensor)
+    '''
+    # create array
+    arr_2d = df[["acc", "mag", "gyr", "ori", "kmh"]].values 
+
+    # slide over array to create moving windows
+    arr_3d = np.lib.stride_tricks.sliding_window_view(arr_2d, window_size, 0)[::stride]
+
+    # create tensors
+    tensors = torch.tensor(arr_3d).to(device)
+    tensors = tensors.float()
+    return tensors
+
+def predict_with_cnn_1(tensors, model, num_classes=7):
+    '''
+    Predicts an activity using a cnn model from a tensor of sensordata "acc", "mag", "gyr", "ori", "kmh"
+    Args: 
+        tensors (torch tensor): the sensordaa as 3d tensor of format (X, 5, 90)
+        model (str): the cnn model
+        num_classes (int): 4 or 7 depeding on the number of classes to predict
+    Returns:
+        String prediction
+    '''
+    itos_7= {
+        0:"Bicycling",
+        1:"Elevatoring",
+        2:"Jogging",
+        3:"Sitting",
+        4:"Stairway",
+        5:"Transport",
+        6:"Walking"}
+
+    # set model to eval mode
+    model.eval()
+    # predict
+    with torch.no_grad():
+        output = model(tensors)
+        pred=torch.max(output, 1)
+        labels = pred.indices
+        labels_numpy = labels.cpu().numpy()
+        counts = np.bincount(labels_numpy)
+        if num_classes == 7:
+            return itos_7[np.argmax(counts)]
 
 if __name__ == '__main__':
     //host on every ip avaliable
