@@ -3,14 +3,91 @@ import flask
 import pandas as pd
 import numpy as np
 import os, io, json
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from math import sin, cos, sqrt, atan2, radians
+
+class CNN_2(nn.Module):
+    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
+        '''Convolutional Net class'''
+        super(CNN_2, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
+        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
+        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
+        self.fc1 = nn.Linear(in_features=conv2_channels*68, out_features=fc_linear_1)
+        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
+        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
+        self.conv2_channels = conv2_channels
+    
+        self.dropout = nn.Dropout(p=dropout)
+        
+        
+    def forward(self, x):
+        '''
+        Applies the forward pass
+        Args:
+            x (torch.tensor): input feature tensor
+        Returns:
+            x (torch.tensor): output tensor of size num_classes
+        '''
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, self.conv2_channels*68) # flatten tensor
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+
+
+class CNN_3(nn.Module):
+    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, conv3_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
+        '''Convolutional Net class'''
+        super(CNN_3, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
+        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
+        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
+        self.conv3 = nn.Conv1d(in_channels=conv2_channels, out_channels=conv3_channels, kernel_size=kernel_size, padding=padding) 
+        self.fc1 = nn.Linear(in_features=conv3_channels*57, out_features=fc_linear_1)
+        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
+        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
+        self.conv2_channels = conv2_channels
+        self.conv3_channels = conv3_channels
+        self.dropout = nn.Dropout(p=dropout)
+        
+    def forward(self, x):
+        '''
+        Applies the forward pass
+        Args:
+            x (torch.tensor): input feature tensor
+        Returns:
+            x (torch.tensor): output tensor of size num_classes
+        '''
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(-1, self.conv3_channels*57) # flatten tensor
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
 
 app = flask.Flask(__name__)
 port = int(9099)
 
 model_path = "./Analyse/webservice/models/"
 if(not os.path.exists(model_path)):
-    raise Exception("Model path does not exist")
+  model_path = "./models/"
+  if(not os.path.exists(model_path)):
+    model_path = "./test/cdl1/models/"
+    if(not os.path.exists(model_path)):
+      raise Exception("Model path does not exist")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = dict()
 for root, dirs, files in os.walk(model_path):
@@ -19,7 +96,9 @@ for root, dirs, files in os.walk(model_path):
           model_name = file.split(".")[0]
           # print(model_name)
           models[model_name] = pickle.load(open(model_path + file, 'rb'))
-
+      elif file.endswith(".pt"):
+          model_name = file.split(".")[0]
+          models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
@@ -35,14 +114,19 @@ def predict():
     df_test = pd.read_csv(buf, sep=',', header=None)
 
     df_test = prep_allgemein(df_test)
+
     
     if(post_content["model"] == "SPR_RandomForest"):
-      df_test = process_data_group_bienli(df_test)
+      df_test = groupby_gruppe_bienli(process_data_group_bienli(df_test))
       # TODO Modell mit 25 features trainieren
-      prediction = models['rf_allprop'].predict(df_test.iloc[0, 2:].values.reshape((1, -1)))
+      prediction = models['rf_allprop'].predict(df_test.iloc[-1, 2:].values.reshape((1, -1)))
 
     if(post_content["model"] == "SPR_CNN1"):
-      prediction = models['cnn_XYZ'].predict(df_test)
+      df_test = process_data_group_bienli(df_test)
+      df_test = normalize_scales(df_test) # normalize scales with min max from training
+      tensors = transform_to_tensors(df_test) # create tensors
+      prediction = [predict_with_cnn_1(tensors, model = models['2022-05-07-04-00-20'], num_classes=7)]
+
 
     if(post_content["model"] == "SPR_CNN2"):
       prediction = models['cnn2_XYZ'].predict(df_test)
@@ -106,6 +190,9 @@ def process_data_group_bienli(df):
   df.drop(columns=["lat", "long", "gps_differs"], inplace=True)
   
   df["kmh"] = df["kmh"].ffill().fillna(0)
+  return df
+
+def groupby_gruppe_bienli(df):
   
   old_time = pd.to_datetime("01.01.2022 00:00:00")
 
@@ -151,9 +238,69 @@ def get_distance(point1, point2):
   return distance
 
 
+def transform_to_tensors(df, window_size = 90, stride = 10):
+    '''
+    Transforms the dataframe into a 3d tensor of shape (X, 5, 90)
+    Args:
+        df (pandas DataFrame): dataframe with sensordata
+    Returns:
+        tensors (torch tensor)
+    '''
+    # create array
+    arr_2d = df[["acc", "mag", "gyr", "ori", "kmh"]].values 
+
+    # slide over array to create moving windows
+    arr_3d = np.lib.stride_tricks.sliding_window_view(arr_2d, window_size, 0)[::stride]
+
+    # create tensors
+    tensors = torch.tensor(arr_3d).to(device)
+    tensors = tensors.float()
+    return tensors
+
+def predict_with_cnn_1(tensors, model, num_classes=7):
+    '''
+    Predicts an activity using a cnn model from a tensor of sensordata "acc", "mag", "gyr", "ori", "kmh"
+    Args: 
+        tensors (torch tensor): the sensordaa as 3d tensor of format (X, 5, 90)
+        model (str): the cnn model
+        num_classes (int): 4 or 7 depeding on the number of classes to predict
+    Returns:
+        String prediction
+    '''
+    itos_7= {
+        0:"Bicycling",
+        1:"Elevatoring",
+        2:"Jogging",
+        3:"Sitting",
+        4:"Stairway",
+        5:"Transport",
+        6:"Walking"}
+
+    # set model to eval mode
+    model.eval()
+    # predict
+    with torch.no_grad():
+        output = model(tensors)
+        pred=torch.max(output, 1)
+        labels = pred.indices
+        labels_numpy = labels.cpu().numpy()
+        counts = np.bincount(labels_numpy)
+        if num_classes == 7:
+            return itos_7[np.argmax(counts)]
+
+
+def normalize_scales(df):
+    df = df.copy()
+    x = df[["acc", "mag", "gyr", "ori", "kmh"]]
+    scale_max = [4.42877550e+01, 8.81122530e+03, 1.16565825e+02, 5.99909750e+00, 1.18619879e+02]
+    scale_min = [1.87147230e+01, 3.29054710e+03, 5.16912100e+01, 2.27530129e+00, 0.00000000e+00]
+    for i, col in enumerate(x.columns):
+        x[col] = (x[col] - scale_min[i]) / (scale_max[i] - scale_min[i])
+    return x
+
 
 if __name__ == '__main__':
-    //host on every ip avaliable
+    # host on every ip avaliable
     app.run(host="0.0.0.0", port=port)
 
 
