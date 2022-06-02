@@ -16,7 +16,11 @@
                 <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
                 <Picker SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModel, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
             </xct:DockLayout>
-            <Label FontSize="50" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Prediction, Converter={StaticResource PredictionEmojiConverter}}" />
+            <Label xct:DockLayout.Dock="Top" Margin="10" FontSize="120" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Prediction, Converter={StaticResource PredictionEmojiConverter}}" />
+            <Label xct:DockLayout.Dock="Top" FontSize="30" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Prediction}" />
+            <ScrollView Margin="30">
+                <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+            </ScrollView>
         </xct:DockLayout>
     </ContentPage.Content>
 </ContentPage>

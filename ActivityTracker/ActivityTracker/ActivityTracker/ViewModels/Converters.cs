@@ -66,19 +66,21 @@ namespace ActivityTracker.ViewModels
             {
                 return "🚶";
             }
-            else if(prediction == "jogging")
+            else if(prediction == "Jogging")
             {
                 return "🏃";
             }
             else if (prediction == "Elevatoring")
             {
+                //lift
                 return "🛗";
             }
             else if (prediction == "Sitting")
             {
+                //stuhl
                 return "🪑";
             }
-            else if (prediction == "Bicicling")
+            else if (prediction == "Bicycling")
             {
                 return "🚴‍";
             }
@@ -89,6 +91,10 @@ namespace ActivityTracker.ViewModels
             else if(prediction == "Transport")
             {
                 return "🚊🚗";
+            }
+            else if (prediction == "loading...")
+            {
+                return "";
             }
             else
             {

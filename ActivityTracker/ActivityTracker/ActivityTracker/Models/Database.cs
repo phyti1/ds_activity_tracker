@@ -38,16 +38,18 @@ namespace ActivityTracker.Models
         {
             try
             {
-#if DEBUG
-                var result = await PostPrediction("http://192.168.50.222:9099/predict", data);
-#else
-                var result = await PostPrediction("https://insidertips.ch:9099/predict", "data");
-#endif
+                string url = "http://www.insidertips.ch:9099/predict";
+
+//#if DEBUG
+                //url = "https://insidertips.ch:9099/predict";
+//#endif
+                var result = await PostPrediction(url, "data");
                 return result;
             }
             catch (Exception ex)
             {
-                return ex.ToString();
+                Configuration.Instance.Log += ex.ToString();
+                return "error";
             }
         }
 

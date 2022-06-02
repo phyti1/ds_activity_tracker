@@ -199,10 +199,12 @@ namespace ActivityTracker.Models
                     if (value)
                     {
                         DataAquisition.Start();
+                        Prediction = "loading...";
                     }
                     else
                     {
                         DataAquisition.Stop();
+                        Prediction = "";
                     }
                     _isPredicting = value;
                     OnPropertyChanged();
@@ -280,6 +282,7 @@ namespace ActivityTracker.Models
         }
         public async Task SendResetLog()
         {
+            var _oldTime = DateTime.Now;
             var _localLog = _csvLog;
             _csvLog = "";
             bool _success = false;
@@ -308,7 +311,15 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Log += $"Data sent ({MeasIndex})";
+                    var _timeDiff = DateTime.Now - _oldTime;
+                    if (IsTracking)
+                    {
+                        Log += $"Data sent ({MeasIndex})";
+                    }
+                    if (IsPredicting)
+                    {
+                        Log += $"<{Prediction}> processing time[ms]: {Math.Round(_timeDiff.TotalMilliseconds)}";
+                    }
                 });
             }
             //short feedback
