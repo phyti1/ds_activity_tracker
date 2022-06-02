@@ -105,14 +105,14 @@ namespace ActivityTracker.Models
                         {
                             Task.Run(async () =>
                             {
-                                await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Predicting);
+                                await Configuration.Instance.SendResetLog(RunTypeE.Predicting);
                             }).GetAwaiter();
                         }
                         if (_msCounter % 10000 == 0 && Configuration.Instance.IsTracking)
                         {
                             Task.Run(async () =>
                             {
-                                await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Tracking);
+                                await Configuration.Instance.SendResetLog(RunTypeE.Tracking);
                             }).GetAwaiter();
                         }
                     }
@@ -133,7 +133,7 @@ namespace ActivityTracker.Models
                 //send log after cancellation
                 if (Configuration.Instance.IsTracking)
                 {
-                    await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Tracking);
+                    await Configuration.Instance.SendResetLog(RunTypeE.Tracking);
                 }
 
                 Device.BeginInvokeOnMainThread(() =>

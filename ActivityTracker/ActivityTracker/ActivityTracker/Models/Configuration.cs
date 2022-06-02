@@ -16,33 +16,63 @@ using XamarinForms.LocationService.Messages;
 
 namespace ActivityTracker.Models
 {
+    public enum ActivityTypeE
+    {
+        Sitting,
+        Walking,
+        Jogging,
+        Running,
+        Bicycling,
+        Elevatoring,
+        Stairway,
+        Transport,
+    }
+    public enum RunTypeE
+    {
+        None,
+        Predicting,
+        Tracking
+    }
+    public enum ModelTypeE
+    {
+        None,
+        SPR_RandomForest,
+        SPR_CNN1,
+        SPR_CNN2,
+    }
+
+
+    public class StringClass : BaseClass
+    {
+        string _value = "";
+        public string Value
+        {
+            get => _value;
+            set
+            {
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    _value = value;
+                    OnPropertyChanged();
+                });
+            }
+        }
+    }
+    public class ModelTypeClass : BaseClass
+    {
+        ModelTypeE _value = ModelTypeE.None;
+        public ModelTypeE Value
+        {
+            get => _value;
+            set
+            {
+                _value = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     public class Configuration : BaseClass
     {
-        public enum ActivityTypeE
-        {
-            Sitting,
-            Walking,
-            Jogging,
-            Running,
-            Bicycling,
-            Elevatoring,
-            Stairway,
-            Transport,
-        }
-        public enum RunTypeE
-        {
-            None,
-            Predicting,
-            Tracking
-        }
-        public enum ModelTypeE
-        {
-            None,
-            SPR_RandomForest,
-            SPR_CNN1,
-            SPR_CNN2,
-
-        }
         static Configuration _instance = null;
         public static Configuration Instance
         {
@@ -58,10 +88,14 @@ namespace ActivityTracker.Models
         public int MeasIndex = 0;
         public string MeasGuid { get; internal set; }
         public DataAquisition DataAquisition { get; private set; }
-        private Configuration() : base(true)
+        private Configuration()
         {
             ResetGraphs();
             DataAquisition = new DataAquisition();
+            SelectedModels.Add(new ModelTypeClass() { Value = ModelTypeE.None });
+            SelectedModels.Add(new ModelTypeClass() { Value = ModelTypeE.None });
+            Predictions.Add(new StringClass());
+            Predictions.Add(new StringClass());
         }
         public void ResetGraphs()
         {
@@ -113,13 +147,13 @@ namespace ActivityTracker.Models
                 MeasIndex = 0;
             }
         }
-        private ModelTypeE _selectedModel = ModelTypeE.None;
-        public ModelTypeE SelectedModel
+        private List<ModelTypeClass> _selectedModels = new List<ModelTypeClass>();
+        public List<ModelTypeClass> SelectedModels
         {
-            get => _selectedModel;
+            get => _selectedModels;
             set
             {
-                _selectedModel = value;
+                _selectedModels = value;
                 OnPropertyChanged();
             }
         }
@@ -201,12 +235,18 @@ namespace ActivityTracker.Models
                     {
                         Log = "";
                         DataAquisition.Start();
-                        Prediction = "loading...";
+                        for(int i = 0; i < SelectedModels.Count(); i++)
+                        {
+                            if (SelectedModels[i].Value != ModelTypeE.None)
+                            {
+                                Predictions[i].Value = "loading...";
+                            }
+                        }
                     }
                     else
                     {
                         DataAquisition.Stop();
-                        Prediction = "";
+                        Predictions.ForEach(p => p.Value = "");
                     }
                     _isPredicting = value;
                     OnPropertyChanged();
@@ -214,13 +254,13 @@ namespace ActivityTracker.Models
             }
         }
 
-        private string _prediction;
-        public string Prediction
+        private List<StringClass> _predictions = new List<StringClass>();
+        public List<StringClass> Predictions
         {
-            get => _prediction;
+            get => _predictions;
             set
             {
-                _prediction = value;
+                _predictions = value;
                 OnPropertyChanged();
             }
         }
@@ -232,13 +272,16 @@ namespace ActivityTracker.Models
             get => _log;
             set
             {
-                _log = value + "\r\n";
-                //limit to n last characters so the app does not hang up on errors
-                if(_log.Length > n_MaxLogChars)
+                Device.BeginInvokeOnMainThread(() =>
                 {
-                    _log = "reduced output due to performance optimization...\r\n\r\n" + _log.Substring(_log.Length - n_MaxLogChars, n_MaxLogChars);
-                }
-                OnPropertyChanged();
+                    _log = value + "\r\n";
+                    //limit to n last characters so the app does not hang up on errors
+                    if (_log.Length > n_MaxLogChars)
+                    {
+                        _log = "reduced output due to performance optimization...\r\n\r\n" + _log.Substring(_log.Length - n_MaxLogChars, n_MaxLogChars);
+                    }
+                    OnPropertyChanged();
+                });
             }
         }
 
@@ -295,7 +338,6 @@ namespace ActivityTracker.Models
             {
                 throw new Exception("either prediction or tracking mode must be specified");
             }
-            var _oldTime = DateTime.Now;
             var _localLog = _csvLog;
             _csvLog = "";
             bool _success = false;
@@ -305,11 +347,18 @@ namespace ActivityTracker.Models
                 _csvLogHistory += _localLog;
                 //reduce text to 180 last records
                 _csvLogHistory = string.Join("\n", _csvLogHistory.Split(new char[] { '\n' }).Reverse().Take(180).Reverse());
-                string _prediction = await Database.PostPrediction(_csvLogHistory);
-                Device.BeginInvokeOnMainThread(() =>
+                for(int i = 0; i < SelectedModels.Count(); i++)
                 {
-                    Prediction = _prediction;
-                });
+                    var _selectedModel = SelectedModels[i].Value;
+                    if(_selectedModel != ModelTypeE.None)
+                    {
+                        var _oldTime = DateTime.Now;
+                        string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel);
+                        Predictions[i].Value = _prediction;
+                        var _timeDiff = DateTime.Now - _oldTime;
+                        Log += $"{Configuration.Instance.SelectedModels[i].Value}: <{Predictions[i].Value}> req. time: {Math.Round(_timeDiff.TotalMilliseconds)}ms";
+                    }
+                }
                 _success = true;
             }
             if(runtype == RunTypeE.Tracking)
@@ -328,14 +377,9 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    var _timeDiff = DateTime.Now - _oldTime;
                     if (runtype == RunTypeE.Tracking)
                     {
                         Log += $"Data sent ({MeasIndex})";
-                    }
-                    if (runtype == RunTypeE.Predicting)
-                    {
-                        Log += $"{Configuration.Instance.SelectedModel}: <{Prediction}> processing time[ms]: {Math.Round(_timeDiff.TotalMilliseconds)}";
                     }
                 });
             }

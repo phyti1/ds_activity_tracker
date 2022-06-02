@@ -8,7 +8,7 @@ namespace ActivityTracker.Models
 {
     class BaseViewModel : Models.BaseClass
     {
-        public BaseViewModel() : base(false) { }
+        public BaseViewModel() { }
         public bool IsDebug
         {
             get

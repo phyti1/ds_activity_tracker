@@ -8,10 +8,8 @@ namespace ActivityTracker.Models
 {
     public class BaseClass : INotifyPropertyChanged
     {
-        bool _serializeOnPropertyChanged;
-        public BaseClass(bool serializeOnPropertyChanged)
+        public BaseClass()
         {
-            _serializeOnPropertyChanged = serializeOnPropertyChanged;
         }
         #region INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;

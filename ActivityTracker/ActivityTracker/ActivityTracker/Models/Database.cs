@@ -34,7 +34,7 @@ namespace ActivityTracker.Models
             return false;
         }
 
-        public static async Task<string> PostPrediction(string data)
+        public static async Task<string> PostPrediction(string data, ModelTypeE selectedModel)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace ActivityTracker.Models
 //#if DEBUG
                 //url = "https://insidertips.ch:9099/predict";
 //#endif
-                var result = await PostPrediction(url, data);
+                var result = await PostPrediction(url, data, selectedModel);
                 return result;
             }
             catch (Exception ex)
@@ -74,7 +74,7 @@ namespace ActivityTracker.Models
             }
             return _response.StatusCode;
         }
-        private static async Task<string> PostPrediction(string url, string data)
+        private static async Task<string> PostPrediction(string url, string data, ModelTypeE selectedModel)
         {
             // errors are handled outside this method
             HttpClient _client = new HttpClient();
@@ -82,7 +82,7 @@ namespace ActivityTracker.Models
 
             string _responseString = null;
             HttpContent _content = new StringContent(
-                "{ \"model\" : \"" + Configuration.Instance.SelectedModel + "\", \"data\" : \"" + data + "\" }" );
+                "{ \"model\" : \"" + selectedModel + "\", \"data\" : \"" + data + "\" }" );
             HttpResponseMessage _response = null;
             _response = await _client.PostAsync(url, _content).ConfigureAwait(false);
             _responseString = await _response.Content.ReadAsStringAsync().ConfigureAwait(false);

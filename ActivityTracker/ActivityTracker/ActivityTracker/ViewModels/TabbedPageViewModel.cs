@@ -13,7 +13,7 @@ namespace ActivityTracker.ViewModels
         {
             get
             {
-                var _list = Enum.GetNames(typeof(Configuration.ModelTypeE)).ToList();
+                var _list = Enum.GetNames(typeof(ModelTypeE)).ToList();
                 return _list;
             }
         }

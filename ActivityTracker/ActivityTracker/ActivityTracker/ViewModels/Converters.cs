@@ -24,7 +24,7 @@ namespace ActivityTracker.ViewModels
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            string activity = TabbedPageViewModel.ActivityNameMapping[(ActivityTypeE)value];
+            string activity = TabbedPageViewModel.ActivityNameMapping[(Models.ActivityTypeE)value];
             return activity;
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -53,7 +53,7 @@ namespace ActivityTracker.ViewModels
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return (Models.Configuration.ModelTypeE)value;
+            return (Models.ModelTypeE)value;
         }
     }
 
