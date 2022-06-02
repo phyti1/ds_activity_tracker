@@ -8,6 +8,74 @@ import torch.nn as nn
 import torch.nn.functional as F
 from math import sin, cos, sqrt, atan2, radians
 
+class CNN_2(nn.Module):
+    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
+        '''Convolutional Net class'''
+        super(CNN_2, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
+        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
+        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
+        self.fc1 = nn.Linear(in_features=conv2_channels*68, out_features=fc_linear_1)
+        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
+        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
+        self.conv2_channels = conv2_channels
+    
+        self.dropout = nn.Dropout(p=dropout)
+        
+        
+    def forward(self, x):
+        '''
+        Applies the forward pass
+        Args:
+            x (torch.tensor): input feature tensor
+        Returns:
+            x (torch.tensor): output tensor of size num_classes
+        '''
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, self.conv2_channels*68) # flatten tensor
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+
+
+class CNN_3(nn.Module):
+    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, conv3_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
+        '''Convolutional Net class'''
+        super(CNN_3, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
+        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
+        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
+        self.conv3 = nn.Conv1d(in_channels=conv2_channels, out_channels=conv3_channels, kernel_size=kernel_size, padding=padding) 
+        self.fc1 = nn.Linear(in_features=conv3_channels*57, out_features=fc_linear_1)
+        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
+        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
+        self.conv2_channels = conv2_channels
+        self.conv3_channels = conv3_channels
+        self.dropout = nn.Dropout(p=dropout)
+        
+    def forward(self, x):
+        '''
+        Applies the forward pass
+        Args:
+            x (torch.tensor): input feature tensor
+        Returns:
+            x (torch.tensor): output tensor of size num_classes
+        '''
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(-1, self.conv3_channels*57) # flatten tensor
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = self.fc3(x)
+        return x
+
 app = flask.Flask(__name__)
 port = int(9099)
 
@@ -47,13 +115,13 @@ def predict():
     if(post_content["model"] == "SPR_RandomForest"):
       df_test = groupby_gruppe_bienli(process_data_group_bienli(df_test))
       # TODO Modell mit 25 features trainieren
-      prediction = models['rf_allprop'].predict(df_test.iloc[0, 2:].values.reshape((1, -1)))
+      prediction = models['rf_allprop'].predict(df_test.iloc[-1, 2:].values.reshape((1, -1)))
 
     if(post_content["model"] == "SPR_CNN1"):
       df_test = process_data_group_bienli(df_test)
       #load model
       tensors = transform_to_tensors(df_test)
-      prediction = predict_with_cnn_1(tensors, model = models['2022-05-07-01-28-13'], num_classes=7)
+      prediction = [predict_with_cnn_1(tensors, model = models['2022-05-07-04-00-20'], num_classes=7)]
 
 
     if(post_content["model"] == "SPR_CNN2"):
@@ -216,39 +284,6 @@ def predict_with_cnn_1(tensors, model, num_classes=7):
         if num_classes == 7:
             return itos_7[np.argmax(counts)]
 
-class CNN_3(nn.Module):
-    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, conv3_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
-        '''Convolutional Net class'''
-        super(CNN_3, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
-        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
-        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
-        self.conv3 = nn.Conv1d(in_channels=conv2_channels, out_channels=conv3_channels, kernel_size=kernel_size, padding=padding) 
-        self.fc1 = nn.Linear(in_features=conv3_channels*57, out_features=fc_linear_1)
-        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
-        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
-        self.conv2_channels = conv2_channels
-        self.conv3_channels = conv3_channels
-        self.dropout = nn.Dropout(p=dropout)
-        
-    def forward(self, x):
-        '''
-        Applies the forward pass
-        Args:
-            x (torch.tensor): input feature tensor
-        Returns:
-            x (torch.tensor): output tensor of size num_classes
-        '''
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(-1, self.conv3_channels*57) # flatten tensor
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        x = self.dropout(x)
-        x = self.fc3(x)
-        return x
 
 if __name__ == '__main__':
     # host on every ip avaliable
