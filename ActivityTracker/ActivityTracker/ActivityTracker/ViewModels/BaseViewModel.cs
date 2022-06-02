@@ -15,8 +15,9 @@ namespace ActivityTracker.Models
             {
 #if DEBUG
                 return true;
-#endif
+#else
                 return false;
+#endif
             }
         }
         string title = string.Empty;

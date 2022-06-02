@@ -99,13 +99,21 @@ namespace ActivityTracker.Models
                             });
                         }
                         _msCounter += 50;
-                        if (_msCounter > 10000)
+
+                        //faster time interval for prediction than tracking
+                        if(_msCounter % 2000 == 0 && Configuration.Instance.IsPredicting)
                         {
                             Task.Run(async () =>
                             {
-                                await Configuration.Instance.SendResetLog();
+                                await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Predicting);
                             }).GetAwaiter();
-                            _msCounter = 0;
+                        }
+                        if (_msCounter % 10000 == 0 && Configuration.Instance.IsTracking)
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Tracking);
+                            }).GetAwaiter();
                         }
                     }
                 }
@@ -123,7 +131,10 @@ namespace ActivityTracker.Models
                 if (Gyroscope.IsMonitoring) { Gyroscope.Stop(); }
 
                 //send log after cancellation
-                await Configuration.Instance.SendResetLog();
+                if (Configuration.Instance.IsTracking)
+                {
+                    await Configuration.Instance.SendResetLog(Configuration.RunTypeE.Tracking);
+                }
 
                 Device.BeginInvokeOnMainThread(() =>
                 {

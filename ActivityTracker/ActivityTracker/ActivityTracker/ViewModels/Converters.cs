@@ -94,7 +94,7 @@ namespace ActivityTracker.ViewModels
             }
             else if (prediction == "loading...")
             {
-                return "";
+                return "🔄";
             }
             else
             {

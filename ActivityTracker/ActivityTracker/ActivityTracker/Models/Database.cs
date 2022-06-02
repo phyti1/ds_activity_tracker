@@ -43,7 +43,7 @@ namespace ActivityTracker.Models
 //#if DEBUG
                 //url = "https://insidertips.ch:9099/predict";
 //#endif
-                var result = await PostPrediction(url, "data");
+                var result = await PostPrediction(url, data);
                 return result;
             }
             catch (Exception ex)

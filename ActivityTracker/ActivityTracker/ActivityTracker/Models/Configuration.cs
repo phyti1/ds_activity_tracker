@@ -32,8 +32,8 @@ namespace ActivityTracker.Models
         public enum RunTypeE
         {
             None,
-            Predict,
-            Track
+            Predicting,
+            Tracking
         }
         public enum ModelTypeE
         {
@@ -162,6 +162,7 @@ namespace ActivityTracker.Models
                     {
                         if (value)
                         {
+                            Log = "";
                             MessagingCenter.Send(new StartServiceMessage(), "ServiceStarted");
                             //_dataAquisition.Start();
                         }
@@ -198,6 +199,7 @@ namespace ActivityTracker.Models
                     // do not run in background, start directly
                     if (value)
                     {
+                        Log = "";
                         DataAquisition.Start();
                         Prediction = "loading...";
                     }
@@ -223,6 +225,7 @@ namespace ActivityTracker.Models
             }
         }
 
+        private int n_MaxLogChars = 10000;
         private string _log;
         public string Log
         {
@@ -230,6 +233,11 @@ namespace ActivityTracker.Models
             set
             {
                 _log = value + "\r\n";
+                //limit to n last characters so the app does not hang up on errors
+                if(_log.Length > n_MaxLogChars)
+                {
+                    _log = "reduced output due to performance optimization...\r\n\r\n" + _log.Substring(_log.Length - n_MaxLogChars, n_MaxLogChars);
+                }
                 OnPropertyChanged();
             }
         }
@@ -280,22 +288,31 @@ namespace ActivityTracker.Models
                 }
             });
         }
-        public async Task SendResetLog()
+        private string _csvLogHistory = "";
+        public async Task SendResetLog(RunTypeE runtype)
         {
+            if(runtype == RunTypeE.None)
+            {
+                throw new Exception("either prediction or tracking mode must be specified");
+            }
             var _oldTime = DateTime.Now;
             var _localLog = _csvLog;
             _csvLog = "";
             bool _success = false;
-            if (IsPredicting)
+            if (runtype == RunTypeE.Predicting)
             {
-                string _prediction = await Database.PostPrediction(_localLog);
+                //allow for faster sending intervals
+                _csvLogHistory += _localLog;
+                //reduce text to 180 last records
+                _csvLogHistory = string.Join("\n", _csvLogHistory.Split(new char[] { '\n' }).Reverse().Take(180).Reverse());
+                string _prediction = await Database.PostPrediction(_csvLogHistory);
                 Device.BeginInvokeOnMainThread(() =>
                 {
                     Prediction = _prediction;
                 });
                 _success = true;
             }
-            if(IsTracking)
+            if(runtype == RunTypeE.Tracking)
             {
                 _success = await Database.SendTrackingData(_localLog);
             }
@@ -312,18 +329,21 @@ namespace ActivityTracker.Models
                 Device.BeginInvokeOnMainThread(() =>
                 {
                     var _timeDiff = DateTime.Now - _oldTime;
-                    if (IsTracking)
+                    if (runtype == RunTypeE.Tracking)
                     {
                         Log += $"Data sent ({MeasIndex})";
                     }
-                    if (IsPredicting)
+                    if (runtype == RunTypeE.Predicting)
                     {
-                        Log += $"<{Prediction}> processing time[ms]: {Math.Round(_timeDiff.TotalMilliseconds)}";
+                        Log += $"{Configuration.Instance.SelectedModel}: <{Prediction}> processing time[ms]: {Math.Round(_timeDiff.TotalMilliseconds)}";
                     }
                 });
             }
-            //short feedback
-            Vibration.Vibrate(TimeSpan.FromMilliseconds(100));
+            //short feedback for data logging
+            if (runtype == RunTypeE.Tracking)
+            {
+                Vibration.Vibrate(TimeSpan.FromMilliseconds(100));
+            }
         }
     }
 
