@@ -123,8 +123,8 @@ def predict():
 
     if(post_content["model"] == "SPR_CNN1"):
       df_test = process_data_group_bienli(df_test)
-      #load model
-      tensors = transform_to_tensors(df_test)
+      df_test = normalize_scales(df_test) # normalize scales with min max from training
+      tensors = transform_to_tensors(df_test) # create tensors
       prediction = [predict_with_cnn_1(tensors, model = models['2022-05-07-04-00-20'], num_classes=7)]
 
 
@@ -287,6 +287,16 @@ def predict_with_cnn_1(tensors, model, num_classes=7):
         counts = np.bincount(labels_numpy)
         if num_classes == 7:
             return itos_7[np.argmax(counts)]
+
+
+def normalize_scales(df):
+    df = df.copy()
+    x = df[["acc", "mag", "gyr", "ori", "kmh"]]
+    scale_max = [4.42877550e+01, 8.81122530e+03, 1.16565825e+02, 5.99909750e+00, 1.18619879e+02]
+    scale_min = [1.87147230e+01, 3.29054710e+03, 5.16912100e+01, 2.27530129e+00, 0.00000000e+00]
+    for i, col in enumerate(x.columns):
+        x[col] = (x[col] - scale_min[i]) / (scale_max[i] - scale_min[i])
+    return x
 
 
 if __name__ == '__main__':
