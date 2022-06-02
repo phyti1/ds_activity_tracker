@@ -90,7 +90,7 @@ namespace ActivityTracker.ViewModels
             }
             else if(prediction == "Transport")
             {
-                return "🚊🚗";
+                return "🚊";
             }
             else if (prediction == "loading...")
             {

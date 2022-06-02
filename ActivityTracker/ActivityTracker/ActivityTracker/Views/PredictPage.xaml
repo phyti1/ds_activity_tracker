@@ -21,7 +21,7 @@
                         <Picker HorizontalOptions="FillAndExpand" SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModels[0].Value, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
                         <Picker HorizontalOptions="FillAndExpand" SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModels[1].Value, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
                     </StackLayout>
-                    <Grid HorizontalOptions="FillAndExpand" Padding="0,0,0,15">
+                    <Grid HorizontalOptions="FillAndExpand" Margin="0,0,0,15">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition />
@@ -33,14 +33,14 @@
                     </Grid>
                 </StackLayout>
             </Frame>
-            <Grid HorizontalOptions="FillAndExpand" xct:DockLayout.Dock="Top" >
+            <Grid HorizontalOptions="FillAndExpand" xct:DockLayout.Dock="Top" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <Label Grid.Column="0" FontSize="30" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
+                <Label Grid.Column="0" FontSize="25" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
                        Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[0].Value}" />
-                <Label Grid.Column="1" FontSize="30" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
+                <Label Grid.Column="1" FontSize="25" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
                        Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[1].Value}" />
             </Grid>
             <ScrollView>
