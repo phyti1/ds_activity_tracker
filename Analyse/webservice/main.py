@@ -81,7 +81,11 @@ port = int(9099)
 
 model_path = "./Analyse/webservice/models/"
 if(not os.path.exists(model_path)):
-    raise Exception("Model path does not exist")
+  model_path = "./models/"
+  if(not os.path.exists(model_path)):
+    model_path = "./test/cdl1/models/"
+    if(not os.path.exists(model_path)):
+      raise Exception("Model path does not exist")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
