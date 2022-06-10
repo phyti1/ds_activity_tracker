@@ -134,17 +134,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 models = dict()
 for root, dirs, files in os.walk(model_path):
   for file in files:
+    model_name = file.split(".")[0]
       if file.endswith(".pkl"):
-          model_name = file.split(".")[0]
           # print(model_name)
           models[model_name] = pickle.load(open(model_path + file, 'rb'))
-      elif file.endswith(".pt"):
-          model_name = file.split(".")[0]
-          models[model_name] = torch.load(model_path + file, map_location=device)
+          
       elif file == "cnn_RS_FM.pt":
-          model_name = "cnn_RS_FM"
-          CNN_RS_FM_INST = CNN_RS_FM(poolingFunction=torch.nn.MaxPool2d, bnFunction=torch.nn.BatchNorm2d, activationFunction=torch.nn.ReLU)
-          models[model_name] = CNN_RS_FM_INST.load_state_dict(torch.load(model_path + file, map_location=device))
+          models[model_name] = CNN_RS_FM(poolingFunction=torch.nn.MaxPool2d, bnFunction=torch.nn.BatchNorm2d, activationFunction=torch.nn.ReLU)
+          models[model_name].load_state_dict(torch.load(model_path + file, map_location=device))
+
+      elif file.endswith(".pt"):
+          models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
