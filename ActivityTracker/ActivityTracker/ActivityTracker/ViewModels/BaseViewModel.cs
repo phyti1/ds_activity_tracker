@@ -8,15 +8,16 @@ namespace ActivityTracker.Models
 {
     class BaseViewModel : Models.BaseClass
     {
-        public BaseViewModel() : base(false) { }
+        public BaseViewModel() { }
         public bool IsDebug
         {
             get
             {
 #if DEBUG
                 return true;
-#endif
+#else
                 return false;
+#endif
             }
         }
         string title = string.Empty;

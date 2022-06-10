@@ -16,20 +16,63 @@ using XamarinForms.LocationService.Messages;
 
 namespace ActivityTracker.Models
 {
+    public enum ActivityTypeE
+    {
+        Sitting,
+        Walking,
+        Jogging,
+        Running,
+        Bicycling,
+        Elevatoring,
+        Stairway,
+        Transport,
+    }
+    public enum RunTypeE
+    {
+        None,
+        Predicting,
+        Tracking
+    }
+    public enum ModelTypeE
+    {
+        None,
+        SPR_RandomForest,
+        SPR_CNN1,
+        SPR_CNN2,
+    }
+
+
+    public class StringClass : BaseClass
+    {
+        string _value = "";
+        public string Value
+        {
+            get => _value;
+            set
+            {
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    _value = value;
+                    OnPropertyChanged();
+                });
+            }
+        }
+    }
+    public class ModelTypeClass : BaseClass
+    {
+        ModelTypeE _value = ModelTypeE.None;
+        public ModelTypeE Value
+        {
+            get => _value;
+            set
+            {
+                _value = value;
+                OnPropertyChanged();
+            }
+        }
+    }
     public class Configuration : BaseClass
     {
-        public enum ActivityTypeE
-        {
-            Sitting,
-            Walking,
-            Jogging,
-            Running,
-            Bicycling,
-            Elevatoring,
-            Stairway,
-            Transport,
-        }
-
         static Configuration _instance = null;
         public static Configuration Instance
         {
@@ -42,13 +85,17 @@ namespace ActivityTracker.Models
                 return _instance;
             }
         }
-        internal int MeasIndex = 0;
-        internal string MeasGuid { get; private set; }
+        public int MeasIndex = 0;
+        public string MeasGuid { get; internal set; }
         public DataAquisition DataAquisition { get; private set; }
-        private Configuration() : base(true)
+        private Configuration()
         {
             ResetGraphs();
             DataAquisition = new DataAquisition();
+            SelectedModels.Add(new ModelTypeClass() { Value = ModelTypeE.None });
+            SelectedModels.Add(new ModelTypeClass() { Value = ModelTypeE.None });
+            Predictions.Add(new StringClass());
+            Predictions.Add(new StringClass());
         }
         public void ResetGraphs()
         {
@@ -100,6 +147,16 @@ namespace ActivityTracker.Models
                 MeasIndex = 0;
             }
         }
+        private List<ModelTypeClass> _selectedModels = new List<ModelTypeClass>();
+        public List<ModelTypeClass> SelectedModels
+        {
+            get => _selectedModels;
+            set
+            {
+                _selectedModels = value;
+                OnPropertyChanged();
+            }
+        }
         private string _name = null;
         public string Name
         {
@@ -122,14 +179,13 @@ namespace ActivityTracker.Models
                 OnPropertyChanged();
             }
         }
-
-        private bool _isEnabled;
-        public bool IsEnabled
+        private bool _isTracking;
+        public bool IsTracking
         {
-            get => _isEnabled;
+            get => _isTracking;
             set
             {
-                if(value != _isEnabled)
+                if(value != _isTracking)
                 {
                     if (string.IsNullOrWhiteSpace(Name))
                     {
@@ -140,11 +196,9 @@ namespace ActivityTracker.Models
                     {
                         if (value)
                         {
+                            Log = "";
                             MessagingCenter.Send(new StartServiceMessage(), "ServiceStarted");
                             //_dataAquisition.Start();
-                            Vibration.Vibrate(TimeSpan.FromSeconds(1));
-                            MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
-                            MeasIndex = 0;
                         }
                         else
                         {
@@ -161,42 +215,76 @@ namespace ActivityTracker.Models
                             Thread.Sleep(1100);
                             Vibration.Vibrate(TimeSpan.FromSeconds(1));
                         }
-                        _isEnabled = value;
+                        _isTracking = value;
                         OnPropertyChanged();
-                        Log += IsEnabled ? "Tracker started" : "Tracker stopped";
+                        Log += IsTracking ? "Tracker started" : "Tracker stopped";
                     }
                 }
             }
         }
+        private bool _isPredicting = false;
+        public bool IsPredicting
+        {
+            get => _isPredicting;
+            set
+            {
+                if(value != _isPredicting)
+                {
+                    // do not run in background, start directly
+                    if (value)
+                    {
+                        Log = "";
+                        DataAquisition.Start();
+                        for(int i = 0; i < SelectedModels.Count(); i++)
+                        {
+                            if (SelectedModels[i].Value != ModelTypeE.None)
+                            {
+                                Predictions[i].Value = "loading...";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        DataAquisition.Stop();
+                        Predictions.ForEach(p => p.Value = "");
+                    }
+                    _isPredicting = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
+        private List<StringClass> _predictions = new List<StringClass>();
+        public List<StringClass> Predictions
+        {
+            get => _predictions;
+            set
+            {
+                _predictions = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int n_MaxLogChars = 10000;
         private string _log;
         public string Log
         {
             get => _log;
             set
             {
-                _log = value + "\r\n";
-                OnPropertyChanged();
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    _log = value + "\r\n";
+                    //limit to n last characters so the app does not hang up on errors
+                    if (_log.Length > n_MaxLogChars)
+                    {
+                        _log = "reduced output due to performance optimization...\r\n\r\n" + _log.Substring(_log.Length - n_MaxLogChars, n_MaxLogChars);
+                    }
+                    OnPropertyChanged();
+                });
             }
         }
 
-        // LiveCharts already provides the LiveChartsCore.Defaults.ObservableValue class.
-        private readonly ObservableCollection<ObservableValue> _observableValues = new ObservableCollection<ObservableValue>
-        {
-            new ObservableValue(2),
-            new ObservableValue(5),
-            new ObservableValue(4),
-            new ObservableValue(5),
-            new ObservableValue(2),
-            new ObservableValue(6),
-            new ObservableValue(6),
-            new ObservableValue(6),
-            new ObservableValue(4),
-            new ObservableValue(2),
-            new ObservableValue(3),
-            new ObservableValue(4),
-            new ObservableValue(3)
-        };
 
         private ObservableCollection<ObservableValue> _accelometer = new ObservableCollection<ObservableValue>();
         private ObservableCollection<ObservableValue> _magnetometer = new ObservableCollection<ObservableValue>();
@@ -243,11 +331,40 @@ namespace ActivityTracker.Models
                 }
             });
         }
-        public async Task SendResetLog()
+        private string _csvLogHistory = "";
+        public async Task SendResetLog(RunTypeE runtype)
         {
+            if(runtype == RunTypeE.None)
+            {
+                throw new Exception("either prediction or tracking mode must be specified");
+            }
             var _localLog = _csvLog;
             _csvLog = "";
-            var _success = await Database.SendData(_localLog);
+            bool _success = false;
+            if (runtype == RunTypeE.Predicting)
+            {
+                //allow for faster sending intervals
+                _csvLogHistory += _localLog;
+                //reduce text to 180 last records
+                _csvLogHistory = string.Join("\n", _csvLogHistory.Split(new char[] { '\n' }).Reverse().Take(180).Reverse());
+                for(int i = 0; i < SelectedModels.Count(); i++)
+                {
+                    var _selectedModel = SelectedModels[i].Value;
+                    if(_selectedModel != ModelTypeE.None)
+                    {
+                        var _oldTime = DateTime.Now;
+                        string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel);
+                        Predictions[i].Value = _prediction;
+                        var _timeDiff = DateTime.Now - _oldTime;
+                        Log += $"{Configuration.Instance.SelectedModels[i].Value}: <{Predictions[i].Value}> req. time: {Math.Round(_timeDiff.TotalMilliseconds)}ms";
+                    }
+                }
+                _success = true;
+            }
+            if(runtype == RunTypeE.Tracking)
+            {
+                _success = await Database.SendTrackingData(_localLog);
+            }
             if (!_success)
             {
                 _csvLog = _localLog + _csvLog;
@@ -260,11 +377,17 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Log += $"Data sent ({MeasIndex})";
+                    if (runtype == RunTypeE.Tracking)
+                    {
+                        Log += $"Data sent ({MeasIndex})";
+                    }
                 });
             }
-            //short feedback
-            Vibration.Vibrate(TimeSpan.FromMilliseconds(100));
+            //short feedback for data logging
+            if (runtype == RunTypeE.Tracking)
+            {
+                Vibration.Vibrate(TimeSpan.FromMilliseconds(100));
+            }
         }
     }
 
