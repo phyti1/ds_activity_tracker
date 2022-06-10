@@ -179,7 +179,7 @@ def predict():
 
     if(post_content["model"] == "cnn_RS_FM"):
       # data preprocessing
-      data = pd.read_csv(buf, sep=',', header=None)
+      data = df_test
       data = prep_RS_FM(data)
       data = data.unsqueeze(1).float().to(device)
       # predictions
@@ -210,7 +210,7 @@ def prep_RS_FM(df, samplesize:int=43):
   '''
   # remove unnecessary columns
   df.columns = ['time','name','activity','acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w','lat','long']
-  df.loc[:, 'time'] = pd.to_datetime(df.loc[:, 'time'] + "000") # format="%d.%m.%Y %H:%M.%S.%f"
+  # df.loc[:, 'time'] = pd.to_datetime(df.loc[:, 'time'] + "000") # format="%d.%m.%Y %H:%M.%S.%f"
   df = df[['acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w']]
   arr = df.values
 
