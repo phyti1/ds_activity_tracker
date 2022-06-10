@@ -76,10 +76,9 @@ class CNN_3(nn.Module):
         x = self.fc3(x)
         return x
 
-# define model
 class CNN_RS_FM(torch.nn.Module):
     def __init__(self, poolingFunction, bnFunction, activationFunction, kernel=None, stride=None, padding=None):
-        super(CNN_FR, self).__init__()
+        super(CNN_RS_FM, self).__init__()
 
         # building network with specified number of layers, poolingFunction and bnFunction
         self.network = torch.nn.Sequential(
@@ -144,9 +143,8 @@ for root, dirs, files in os.walk(model_path):
           models[model_name] = torch.load(model_path + file, map_location=device)
       elif file == "cnn_RS_FM.pt":
           model_name = "cnn_RS_FM"
-          CNN_RS_FM_INST = CNN_RS_FM()
+          CNN_RS_FM_INST = CNN_RS_FM(poolingFunction=torch.nn.MaxPool2d, bnFunction=torch.nn.BatchNorm2d, activationFunction=torch.nn.ReLU)
           models[model_name] = CNN_RS_FM_INST.load_state_dict(torch.load(model_path + file, map_location=device))
-          # models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
@@ -181,13 +179,16 @@ def predict():
 
     if(post_content["model"] == "cnn_RS_FM"):
       # data preprocessing
-
+      data = pd.read_csv(buf, sep=',', header=None)
+      data = prep_RS_FM(data)
+      data = data.unsqueeze(1).float().to(device)
       # predictions
-
-      # find most prominent prediction
-
-      # prediction = models['cnn_fr'].predict(df_test)
-      pass
+      models["cnn_RS_FM"].eval()
+      pred = models["cnn_RS_FM"](data)
+      pred = torch.argmax(pred, dim=1)
+      pred = torch.argmax(pred).item()
+      labels = ['Sitting', 'Transport', 'Bicycling', 'Walking', 'Elevatoring', 'Jogging', 'Stairway']
+      prediction = [labels[pred]]
 
     response = prediction[0]
 
@@ -195,11 +196,37 @@ def predict():
   except Exception as e:
     return {'error': str(e)}
 
-def prep_RS_FM(df):
+def prep_RS_FM(df, samplesize:int=43):
+  '''
+  Prepares data for Group RS_FM
+
+  - removes all columns but ['acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w']
+  - turns pd.DataFrame into np.array
+  - splits array into samples of size samplesize
+  - turns list with splits into array
+  - checks shape
+  - turns array into tensor
+
+  '''
+  # remove unnecessary columns
   df.columns = ['time','name','activity','acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w','lat','long']
   df.loc[:, 'time'] = pd.to_datetime(df.loc[:, 'time'] + "000") # format="%d.%m.%Y %H:%M.%S.%f"
   df = df[['acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w']]
-  return df
+  arr = df.values
+
+  # split into samples
+  split = arr.shape[0] // samplesize
+  stop = samplesize * split
+  arr = arr[:stop,:]
+  arr = np.array(np.array_split(arr, split))
+
+  # assert shape
+  assert arr.shape == (split, samplesize, 13)
+
+  # turn into tensor
+  arr = torch.from_numpy(arr)#.to(device)
+
+  return arr
 
 def prep_allgemein(df):
   df.columns = ['time','name','activity','acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w','lat','long']
@@ -300,72 +327,6 @@ def get_distance(point1, point2):
   distance = R * c
   return distance
 
-def create_modelsampleids(df:pd.DataFrame, samplesize:int=43) -> tuple:
-  X = []
-  y = []
-
-  df = 
-
-  for id in list(df.sampleid.unique()):
-      # filter by id
-      temp = df[df.sampleid == id]
-      temp = temp.drop(columns=['sampleid'])
-
-      # get y value
-      temp_y = temp.activity.iloc[0]
-
-      # drop activity
-      temp = temp.drop(columns=['activity'])
-      
-      # determine amount of samples to take and cut temp df
-      n = int(np.floor(temp.shape[0] / samplesize))
-      temp = temp.iloc[:n*samplesize,:]
-
-      # split samples
-      splits = np.array_split(temp, n)
-
-      # append splitted samples to X
-      for split in splits:
-          split = np.array(split)
-          X.append(split)
-          y.append(temp_y)
-
-      # generate samples offset by half the samplesize
-      # filter by id
-      temp = df[df.sampleid == id]
-      temp = temp.drop(columns=['sampleid'])
-
-      # get y value
-      temp_y = temp.activity.iloc[0]
-
-      # drop activity
-      temp = temp.drop(columns=['activity'])
-
-      # cut off half the samplesize at the beginning
-      start = samplesize - (samplesize // 2)
-      temp = temp.iloc[start:,:]
-
-      # determine amount of samples to take and cut temp df
-      n = int(np.floor(temp.shape[0] / samplesize))
-      temp = temp.iloc[:n*samplesize,:]
-
-      # split samples
-      splits = np.array_split(temp, n)
-
-      # append splitted samples to X
-      for split in splits:
-          split = np.array(split)
-          X.append(split)
-          y.append(temp_y)
-      
-
-  # create data tuple
-  data = (np.array(X), np.array(y))
-
-  return data
-
-
-
 def transform_to_tensors(df, window_size = 90, stride = 10):
     '''
     Transforms the dataframe into a 3d tensor of shape (X, 5, 90)
@@ -426,11 +387,9 @@ def normalize_scales(df):
         x[col] = (x[col] - scale_min[i]) / (scale_max[i] - scale_min[i])
     return x
 
-
 if __name__ == '__main__':
     # host on every ip avaliable
     app.run(host="0.0.0.0", port=port)
-
 
 
 
