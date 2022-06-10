@@ -76,6 +76,49 @@ class CNN_3(nn.Module):
         x = self.fc3(x)
         return x
 
+# define model
+class CNN_RS_FM(torch.nn.Module):
+    def __init__(self, poolingFunction, bnFunction, activationFunction, kernel=None, stride=None, padding=None):
+        super(CNN_FR, self).__init__()
+
+        # building network with specified number of layers, poolingFunction and bnFunction
+        self.network = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=1, out_channels=16, kernel_size=3, stride=1, padding=2),
+            poolingFunction(kernel_size=2, stride=2, padding=1),
+            activationFunction(),
+            # bnFunction(num_features=16),
+        
+            torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
+            poolingFunction(kernel_size=2, stride=2, padding=1),
+            activationFunction(),
+            # bnFunction(num_features=32),
+
+            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1),
+            poolingFunction(kernel_size=2, stride=2, padding=1),
+            activationFunction(),
+            # bnFunction(num_features=64),
+        )
+
+        self.linStack = torch.nn.Sequential(
+            torch.nn.Linear(in_features=1344, out_features=672),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(num_features=672),
+
+            torch.nn.Linear(in_features=672, out_features=336),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(num_features=336),
+
+            torch.nn.Linear(in_features=336, out_features=7),
+        )
+
+    def forward(self, x):
+        x = self.network(x)
+        x = torch.nn.Flatten(1)(x)
+        x = self.linStack(x)
+        return x
+
+  
+
 app = flask.Flask(__name__)
 port = int(9099)
 
@@ -99,6 +142,11 @@ for root, dirs, files in os.walk(model_path):
       elif file.endswith(".pt"):
           model_name = file.split(".")[0]
           models[model_name] = torch.load(model_path + file, map_location=device)
+      elif file == "cnn_RS_FM.pt":
+          model_name = "cnn_RS_FM"
+          CNN_RS_FM_INST = CNN_RS_FM()
+          models[model_name] = CNN_RS_FM_INST.load_state_dict(torch.load(model_path + file, map_location=device))
+          # models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
@@ -131,12 +179,27 @@ def predict():
     if(post_content["model"] == "SPR_CNN2"):
       prediction = models['cnn2_XYZ'].predict(df_test)
 
+    if(post_content["model"] == "cnn_RS_FM"):
+      # data preprocessing
+
+      # predictions
+
+      # find most prominent prediction
+
+      # prediction = models['cnn_fr'].predict(df_test)
+      pass
+
     response = prediction[0]
 
     return response
   except Exception as e:
     return {'error': str(e)}
 
+def prep_RS_FM(df):
+  df.columns = ['time','name','activity','acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w','lat','long']
+  df.loc[:, 'time'] = pd.to_datetime(df.loc[:, 'time'] + "000") # format="%d.%m.%Y %H:%M.%S.%f"
+  df = df[['acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w']]
+  return df
 
 def prep_allgemein(df):
   df.columns = ['time','name','activity','acc_x','acc_y','acc_z','mag_x','mag_y','mag_z','gyr_x','gyr_y','gyr_z','ori_x','ori_y','ori_z','ori_w','lat','long']
@@ -236,6 +299,71 @@ def get_distance(point1, point2):
   c = 2 * atan2(sqrt(a), sqrt(1-a))
   distance = R * c
   return distance
+
+def create_modelsampleids(df:pd.DataFrame, samplesize:int=43) -> tuple:
+  X = []
+  y = []
+
+  df = 
+
+  for id in list(df.sampleid.unique()):
+      # filter by id
+      temp = df[df.sampleid == id]
+      temp = temp.drop(columns=['sampleid'])
+
+      # get y value
+      temp_y = temp.activity.iloc[0]
+
+      # drop activity
+      temp = temp.drop(columns=['activity'])
+      
+      # determine amount of samples to take and cut temp df
+      n = int(np.floor(temp.shape[0] / samplesize))
+      temp = temp.iloc[:n*samplesize,:]
+
+      # split samples
+      splits = np.array_split(temp, n)
+
+      # append splitted samples to X
+      for split in splits:
+          split = np.array(split)
+          X.append(split)
+          y.append(temp_y)
+
+      # generate samples offset by half the samplesize
+      # filter by id
+      temp = df[df.sampleid == id]
+      temp = temp.drop(columns=['sampleid'])
+
+      # get y value
+      temp_y = temp.activity.iloc[0]
+
+      # drop activity
+      temp = temp.drop(columns=['activity'])
+
+      # cut off half the samplesize at the beginning
+      start = samplesize - (samplesize // 2)
+      temp = temp.iloc[start:,:]
+
+      # determine amount of samples to take and cut temp df
+      n = int(np.floor(temp.shape[0] / samplesize))
+      temp = temp.iloc[:n*samplesize,:]
+
+      # split samples
+      splits = np.array_split(temp, n)
+
+      # append splitted samples to X
+      for split in splits:
+          split = np.array(split)
+          X.append(split)
+          y.append(temp_y)
+      
+
+  # create data tuple
+  data = (np.array(X), np.array(y))
+
+  return data
+
 
 
 def transform_to_tensors(df, window_size = 90, stride = 10):
