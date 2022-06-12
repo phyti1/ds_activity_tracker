@@ -39,6 +39,9 @@ namespace ActivityTracker.Models
         }
         ~DataAquisition()
         {
+            // This is very essential, the phone sensors can hang up if the tracking is not stopped on closing.
+            // Only a complete restart will restart the sensors.
+
             if (Accelerometer.IsMonitoring) { Accelerometer.Stop(); }
             if (Magnetometer.IsMonitoring) { Magnetometer.Stop(); }
             if (OrientationSensor.IsMonitoring) { OrientationSensor.Stop(); }
@@ -47,6 +50,10 @@ namespace ActivityTracker.Models
 
         public void Start()
         {
+            Vibration.Vibrate(TimeSpan.FromSeconds(1));
+            Configuration.Instance.MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
+            Configuration.Instance.MeasIndex = 0;
+
             _src = new CancellationTokenSource();
             CancellationToken ct = _src.Token;
             _worker = Task.Run(async () =>
@@ -92,13 +99,21 @@ namespace ActivityTracker.Models
                             });
                         }
                         _msCounter += 50;
-                        if (_msCounter > 10000)
+
+                        //faster time interval for prediction than tracking
+                        if(_msCounter % 2000 == 0 && Configuration.Instance.IsPredicting)
                         {
                             Task.Run(async () =>
                             {
-                                await Configuration.Instance.SendResetLog();
+                                await Configuration.Instance.SendResetLog(RunTypeE.Predicting);
                             }).GetAwaiter();
-                            _msCounter = 0;
+                        }
+                        if (_msCounter % 10000 == 0 && Configuration.Instance.IsTracking)
+                        {
+                            Task.Run(async () =>
+                            {
+                                await Configuration.Instance.SendResetLog(RunTypeE.Tracking);
+                            }).GetAwaiter();
                         }
                     }
                 }
@@ -116,11 +131,14 @@ namespace ActivityTracker.Models
                 if (Gyroscope.IsMonitoring) { Gyroscope.Stop(); }
 
                 //send log after cancellation
-                await Configuration.Instance.SendResetLog();
+                if (Configuration.Instance.IsTracking)
+                {
+                    await Configuration.Instance.SendResetLog(RunTypeE.Tracking);
+                }
 
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Configuration.Instance.IsEnabled = false;
+                    Configuration.Instance.IsTracking = false;
                 });
             });
             _geoWorker = Task.Run(async () =>

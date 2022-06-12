@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ActivityTracker.Views;
+using System;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -10,7 +11,8 @@ namespace ActivityTracker
         {
             InitializeComponent();
 
-            MainPage = new MainPage();
+            var _navigationPage = new NavigationPage(new RootTabbedPage());
+            MainPage = _navigationPage;
         }
 
         protected override void OnStart()
