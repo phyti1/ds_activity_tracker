@@ -39,6 +39,8 @@ namespace ActivityTracker.Models
         SPR_RandomForest,
         SPR_CNN1,
         SPR_CNN2,
+        RF_cnn,
+        RF_Cluster
     }
 
 
