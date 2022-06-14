@@ -110,16 +110,16 @@ models = dict()
 for root, dirs, files in os.walk(model_path):
     for file in files:
         model_name = file.split(".")[0]
-           if file.endswith(".pkl"):
-                # print(model_name)
-                models[model_name] = pickle.load(open(model_path + file, 'rb'))
+        if file.endswith(".pkl"):
+            # print(model_name)
+            models[model_name] = pickle.load(open(model_path + file, 'rb'))
 
-            elif file == "cnn_RS_FM.pt":
-                models[model_name] = CNN_RS_FM(poolingFunction=torch.nn.MaxPool2d, bnFunction=torch.nn.BatchNorm2d, activationFunction=torch.nn.ReLU)
-                models[model_name].load_state_dict(torch.load(model_path + file, map_location=device))
+        elif file == "cnn_RS_FM.pt":
+            models[model_name] = CNN_RS_FM(poolingFunction=torch.nn.MaxPool2d, bnFunction=torch.nn.BatchNorm2d, activationFunction=torch.nn.ReLU)
+            models[model_name].load_state_dict(torch.load(model_path + file, map_location=device))
 
-            elif file.endswith(".pt"):
-                models[model_name] = torch.load(model_path + file, map_location=device)
+        elif file.endswith(".pt"):
+            models[model_name] = torch.load(model_path + file, map_location=device)
 
 
 @app.route('/predict', methods=['POST'])
@@ -141,16 +141,16 @@ def predict():
             # TODO Modell mit 25 features trainieren
             prediction = models['rf_allprop'].predict(df_test.iloc[-1, 2:].values.reshape((1, -1)))
 
-    if(post_content["model"] == "SPR_CNN1"):
-      df_test = process_data_group_bienli(df_test)
-      df_test = normalize_scales(df_test) # normalize scales with min max from training
-      tensors = transform_to_tensors(df_test) # create tensors
-      prediction = [predict_with_cnn_1(tensors, model = models['2022-06-04-14-36-07'], num_classes=7)]
+        if(post_content["model"] == "SPR_CNN1"):
+            df_test = process_data_group_bienli(df_test)
+            df_test = normalize_scales(df_test) # normalize scales with min max from training
+            tensors = transform_to_tensors(df_test) # create tensors
+            prediction = [predict_with_cnn_1(tensors, model = models['2022-06-04-14-36-07'], num_classes=7)]
 
         if(post_content["model"] == "SPR_CNN2"):
             prediction = models['cnn2_XYZ'].predict(df_test)
 
-        if(post_content["model"] == "cnn_RS_FM"):
+        if(post_content["model"] == "RF_cnn"):
             # data preprocessing
             data = df_test
             data = prep_RS_FM(data)
