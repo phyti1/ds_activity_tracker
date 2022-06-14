@@ -8,20 +8,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 from math import sin, cos, sqrt, atan2, radians
 
-class CNN_2(nn.Module):
+class CNN_2_bn(nn.Module):
     def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
         '''Convolutional Net class'''
-        super(CNN_2, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
+        super(CNN_2_bn, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding)
+        self.conv1_bn=nn.BatchNorm1d(conv1_channels)
         self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
         self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
+        self.conv2_bn=nn.BatchNorm1d(conv2_channels)
         self.fc1 = nn.Linear(in_features=conv2_channels*68, out_features=fc_linear_1)
+        self.fc1_bn = nn.BatchNorm1d(fc_linear_1)
         self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
-        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
+        self.fc2_bn = nn.BatchNorm1d(fc_linear_2)
+        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)  
         self.conv2_channels = conv2_channels
-    
         self.dropout = nn.Dropout(p=dropout)
-        
         
     def forward(self, x):
         '''
@@ -31,47 +33,12 @@ class CNN_2(nn.Module):
         Returns:
             x (torch.tensor): output tensor of size num_classes
         '''
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv1_bn(self.conv1(x))))
+        x = self.pool(F.relu(self.conv2_bn(self.conv2(x))))
         x = x.view(-1, self.conv2_channels*68) # flatten tensor
-        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc1_bn(self.fc1(x)))
         x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        x = self.dropout(x)
-        x = self.fc3(x)
-        return x
-
-
-class CNN_3(nn.Module):
-    def __init__(self, num_classes, kernel_size=10, pool_size=3, padding=0, conv1_channels = 10, conv2_channels=8, conv3_channels=8, fc_linear_1=180, fc_linear_2=120, dropout=0):
-        '''Convolutional Net class'''
-        super(CNN_3, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=5, out_channels=conv1_channels, kernel_size=kernel_size, padding=padding) 
-        self.pool = nn.MaxPool1d(kernel_size=pool_size, stride=1)
-        self.conv2 = nn.Conv1d(in_channels=conv1_channels, out_channels=conv2_channels, kernel_size=kernel_size, padding=padding) 
-        self.conv3 = nn.Conv1d(in_channels=conv2_channels, out_channels=conv3_channels, kernel_size=kernel_size, padding=padding) 
-        self.fc1 = nn.Linear(in_features=conv3_channels*57, out_features=fc_linear_1)
-        self.fc2 = nn.Linear(in_features=fc_linear_1, out_features=fc_linear_2)
-        self.fc3 = nn.Linear(in_features=fc_linear_2, out_features=num_classes)
-        self.conv2_channels = conv2_channels
-        self.conv3_channels = conv3_channels
-        self.dropout = nn.Dropout(p=dropout)
-        
-    def forward(self, x):
-        '''
-        Applies the forward pass
-        Args:
-            x (torch.tensor): input feature tensor
-        Returns:
-            x (torch.tensor): output tensor of size num_classes
-        '''
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(-1, self.conv3_channels*57) # flatten tensor
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc2_bn(self.fc2(x)))
         x = self.dropout(x)
         x = self.fc3(x)
         return x
@@ -125,7 +92,7 @@ def predict():
       df_test = process_data_group_bienli(df_test)
       df_test = normalize_scales(df_test) # normalize scales with min max from training
       tensors = transform_to_tensors(df_test) # create tensors
-      prediction = [predict_with_cnn_1(tensors, model = models['2022-05-07-04-00-20'], num_classes=7)]
+      prediction = [predict_with_cnn_1(tensors, model = models['2022-06-04-14-36-07'], num_classes=7)]
 
 
     if(post_content["model"] == "SPR_CNN2"):
