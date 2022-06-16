@@ -107,44 +107,43 @@ class ClusteringForest():
         self.useAllActivities = useAllActivities
         self.seed = seed
         self.numberOfActivities = 7 if useAllActivities else 4
-        self.preprocessedX = None
+        self.numberOfSensors = 4 if combineSensors else 13
         self.models = None
-        self.statsMeasurements = None
-        self.distances = None
         self.best_estimator = None
 
     def fit(self, X, y, maxIter=5, n_jobs=-1):
         # preprocess the data as needed
-        self.preprocessedX = self.preprocess_X(X)
+        preprocessedX = self.preprocess_X(X)
 
-        self.fit_time_series_clustering(maxIter=maxIter, n_jobs=n_jobs)
-        self.distances = self.get_distances(self.preprocessedX)
+        self.fit_time_series_clustering(
+            preprocessedX, maxIter=maxIter, n_jobs=n_jobs)
+        distances = self.get_distances(preprocessedX)
 
-        self.fit_random_forest(y, n_jobs=n_jobs)
+        self.fit_random_forest(distances, y, n_jobs=n_jobs)
         return self
 
-    def fit_time_series_clustering(self, maxIter=5, n_jobs=-1):
+    def fit_time_series_clustering(self, preprocessedX, maxIter=5, n_jobs=-1):
         self.models = []
         for i in range(4):
             print("fitting model number {}".format(i))
             model = TimeSeriesKMeans(n_clusters=self.numberOfActivities, metric="dtw",
                                      max_iter=maxIter, random_state=self.seed, verbose=False, n_jobs=n_jobs)  # use number of activities as number of clusters
-            model.fit(self.preprocessedX[:, :, i])
+            model.fit(preprocessedX[:, :, i])
             self.models.append(model)
 
     def plot_centroids(self, names, size=(20, 20)):
         fig, ax = plt.subplots(self.numberOfActivities,
-                               self.preprocessedX.shape[-1], figsize=size)
+                               self.numberOfSensors, figsize=size)
         # model names
         # plot the centroids for each model
-        for i in range(self.preprocessedX.shape[-1]):
+        for i in range(self.numberOfSensors):
             for j in range(self.numberOfActivities):
                 ax[j, i].plot(self.models[i].cluster_centers_[j])
 
             # set the tiltle per column of subplot
             ax[0, i].set_title(names[i])
 
-    def fit_random_forest(self, y_train, n_jobs=-1):
+    def fit_random_forest(self, distances, y_train, n_jobs=-1):
         random_forest = RandomForestClassifier(random_state=self.seed)
         # create random forest grid search
         param_grid = {
@@ -156,7 +155,7 @@ class ClusteringForest():
         # run gridSerach
         grid_search = GridSearchCV(
             estimator=random_forest, param_grid=param_grid, cv=5, n_jobs=-n_jobs, verbose=5)
-        grid_search.fit(self.distances, y_train)
+        grid_search.fit(distances, y_train)
         self.best_estimator = grid_search.best_estimator_
 
     def preprocess_X(self, X):
@@ -212,12 +211,6 @@ class ClusteringForest():
                 statsMeasurements[j].append(np.max(X[j, :, i]))
                 statsMeasurements[j].append(np.std(X[j, :, i]))
         return statsMeasurements
-
-    def getPreprocessedSample(self, sampleNr=0):
-        if (self.preprocessedX is None):
-            return None
-        else:
-            return self.preprocessedX[sampleNr]
 
     @staticmethod
     def combineAxisOnSensors(input):

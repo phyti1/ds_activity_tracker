@@ -201,3 +201,5 @@ UpgradeLog*.htm
 FakesAssemblies/
 
 .vscode/settings.json
+Group_RS_FM/RF_Cluster.pkl
+*.pkl
