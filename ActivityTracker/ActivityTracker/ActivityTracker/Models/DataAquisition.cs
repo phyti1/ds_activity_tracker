@@ -63,6 +63,7 @@ namespace ActivityTracker.Models
                 Device.BeginInvokeOnMainThread(() =>
                 {
                     Configuration.Instance.Log += "Measurement starting";
+                    Configuration.Instance.Log2 += "Measurement starting";
                 });
                 int _msCounter = 0;
                 try

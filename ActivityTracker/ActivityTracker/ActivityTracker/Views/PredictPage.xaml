@@ -12,39 +12,48 @@
     <ContentPage.Content>
         <xct:DockLayout Margin="40, 20, 40, 0">
             <xct:DockLayout xct:DockLayout.Dock="Top" Padding="0,0,0,10">
-                <Switch xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsPredicting}" />
-                <Entry xct:DockLayout.Dock="Right" MinimumWidthRequest="100" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Name}" Placeholder="Dein Vorname" />
+                <Switch HorizontalOptions="Center" xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsPredicting}" />
             </xct:DockLayout>
             <Frame xct:DockLayout.Dock="Top" Margin="0,0,0,10" CornerRadius="20" HorizontalOptions="FillAndExpand" Padding="0">
-                <StackLayout Padding="20,0,20,0">
+                <StackLayout Padding="20,10,20,0">
+                    <Grid HorizontalOptions="FillAndExpand">
+                        <Label Grid.Column="0"  HorizontalTextAlignment="Center">Model 1</Label>
+                        <Label Grid.Column="1"  HorizontalTextAlignment="Center">Model 2</Label>
+                    </Grid>
                     <StackLayout HorizontalOptions="FillAndExpand" Orientation="Horizontal">
                         <Picker HorizontalOptions="FillAndExpand" SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModels[0].Value, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
                         <Picker HorizontalOptions="FillAndExpand" SelectedIndex="{Binding Source={x:Static m:Configuration.Instance}, Path=SelectedModels[1].Value, Converter={StaticResource EnumNameConverter}}" ItemsSource="{Binding ModelNames}" />
                     </StackLayout>
-                    <Grid HorizontalOptions="FillAndExpand" Margin="0,0,0,15">
+                    <Grid HorizontalOptions="FillAndExpand" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition />
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" FontSize="120" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" LineBreakMode="MiddleTruncation"
+                        <Label Grid.Column="0" FontSize="80" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" LineBreakMode="MiddleTruncation"
                                Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[0].Value, Converter={StaticResource PredictionEmojiConverter}}" />
-                        <Label Grid.Column="1" FontSize="120" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" LineBreakMode="MiddleTruncation"
+                        <Label Grid.Column="1" FontSize="80" HorizontalTextAlignment="Center" VerticalTextAlignment="Center" LineBreakMode="MiddleTruncation"
                                Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[1].Value, Converter={StaticResource PredictionEmojiConverter}}" />
+                    </Grid>
+                    <Grid HorizontalOptions="FillAndExpand" xct:DockLayout.Dock="Top" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" FontSize="25" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
+                       Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[0].Value}" />
+                        <Label Grid.Column="1" FontSize="25" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
+                       Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[1].Value}" />
                     </Grid>
                 </StackLayout>
             </Frame>
-            <Grid HorizontalOptions="FillAndExpand" xct:DockLayout.Dock="Top" Margin="0,0,0,10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
-                </Grid.ColumnDefinitions>
-                <Label Grid.Column="0" FontSize="25" Margin="0,0,0,0" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
-                       Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[0].Value}" />
-                <Label Grid.Column="1" FontSize="25" HorizontalOptions="FillAndExpand" HorizontalTextAlignment="Center" 
-                       Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Predictions[1].Value}" />
-            </Grid>
+            
             <ScrollView>
-                <Label Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+
+                <StackLayout HorizontalOptions="FillAndExpand" Orientation="Horizontal">
+                    <Label HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+
+                    <Label HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log2}" />
+                </StackLayout>
             </ScrollView>
         </xct:DockLayout>
     </ContentPage.Content>

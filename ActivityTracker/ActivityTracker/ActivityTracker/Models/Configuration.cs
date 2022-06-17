@@ -38,7 +38,6 @@ namespace ActivityTracker.Models
         None,
         SPR_RandomForest,
         SPR_CNN1,
-        SPR_CNN2,
         RF_cnn,
         RF_Cluster
     }
@@ -236,6 +235,7 @@ namespace ActivityTracker.Models
                     if (value)
                     {
                         Log = "";
+                        Log2 = "";
                         DataAquisition.Start();
                         for(int i = 0; i < SelectedModels.Count(); i++)
                         {
@@ -276,11 +276,30 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    _log = value + "\r\n";
+                    _log = value;
                     //limit to n last characters so the app does not hang up on errors
                     if (_log.Length > n_MaxLogChars)
                     {
-                        _log = "reduced output due to performance optimization...\r\n\r\n" + _log.Substring(_log.Length - n_MaxLogChars, n_MaxLogChars);
+                        _log = _log.Substring(0, Math.Min(_log.Length, n_MaxLogChars)) + "reduced output";
+                    }
+                    OnPropertyChanged();
+                });
+            }
+        }
+
+        private string _log2;
+        public string Log2
+        {
+            get => _log2;
+            set
+            {
+                Device.BeginInvokeOnMainThread(() =>
+                {
+                    _log2 = value;
+                    //limit to n last characters so the app does not hang up on errors
+                    if (_log2.Length > n_MaxLogChars)
+                    {
+                        _log2 = _log2.Substring(0, Math.Min(_log2.Length, n_MaxLogChars)) + "reduced output";
                     }
                     OnPropertyChanged();
                 });
@@ -302,7 +321,7 @@ namespace ActivityTracker.Models
             }
         }
         private ObservableCollection<ISeries> _visRight;
-        public ObservableCollection<ISeries> VisRight 
+        public ObservableCollection<ISeries> VisRight
         {
             get => _visRight;
             set
@@ -349,18 +368,35 @@ namespace ActivityTracker.Models
                 _csvLogHistory += _localLog;
                 //reduce text to 180 last records
                 _csvLogHistory = string.Join("\n", _csvLogHistory.Split(new char[] { '\n' }).Reverse().Take(180).Reverse());
-                for(int i = 0; i < SelectedModels.Count(); i++)
+                
+                var _selectedModel1 = SelectedModels[0].Value;
+                if (_selectedModel1 != ModelTypeE.None)
                 {
-                    var _selectedModel = SelectedModels[i].Value;
-                    if(_selectedModel != ModelTypeE.None)
+                    var _oldTime = DateTime.Now;
+                    string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel1);
+                    Predictions[0].Value = _prediction;
+                    var _timeDiff = DateTime.Now - _oldTime;
+                    if (Predictions[0].Value.Length > 20)
                     {
-                        var _oldTime = DateTime.Now;
-                        string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel);
-                        Predictions[i].Value = _prediction;
-                        var _timeDiff = DateTime.Now - _oldTime;
-                        Log += $"{Configuration.Instance.SelectedModels[i].Value}: <{Predictions[i].Value}> req. time: {Math.Round(_timeDiff.TotalMilliseconds)}ms";
+                        Predictions[0].Value = "Error";
                     }
+                    Log = $"{Predictions[0].Value}" + '\n' + Log2;
                 }
+
+                var _selectedModel2 = SelectedModels[1].Value;
+                if (_selectedModel2 != ModelTypeE.None)
+                {
+                    var _oldTime = DateTime.Now;
+                    string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel1);
+                    Predictions[1].Value = _prediction;
+                    var _timeDiff = DateTime.Now - _oldTime;
+                    if (Predictions[1].Value.Length > 20)
+                    {
+                        Predictions[1].Value = "Error";
+                    }
+                    Log2 = $"{Predictions[1].Value}" + '\n' + Log2;
+                }
+
                 _success = true;
             }
             if(runtype == RunTypeE.Tracking)
