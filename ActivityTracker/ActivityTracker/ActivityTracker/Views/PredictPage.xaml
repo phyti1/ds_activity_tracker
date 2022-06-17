@@ -10,7 +10,7 @@
         <vm:EnumNameConverter x:Key="EnumNameConverter" />
     </ContentPage.Resources>
     <ContentPage.Content>
-        <xct:DockLayout Margin="40, 20, 40, 0">
+        <xct:DockLayout Margin="20, 20, 20, 0">
             <xct:DockLayout xct:DockLayout.Dock="Top" Padding="0,0,0,10">
                 <Switch HorizontalOptions="Center" xct:DockLayout.Dock="Right" Margin="10, 0, 0, 0" IsToggled="{Binding Source={x:Static m:Configuration.Instance}, Path=IsPredicting}" />
             </xct:DockLayout>
@@ -46,13 +46,11 @@
                     </Grid>
                 </StackLayout>
             </Frame>
-            
-            <ScrollView>
-
+            <ScrollView Margin="20,0,20,0">
                 <StackLayout HorizontalOptions="FillAndExpand" Orientation="Horizontal">
-                    <Label HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+                    <Label HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
 
-                    <Label HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log2}" />
+                    <Label HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log2}" />
                 </StackLayout>
             </ScrollView>
         </xct:DockLayout>

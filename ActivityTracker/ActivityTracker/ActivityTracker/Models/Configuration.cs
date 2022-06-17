@@ -276,7 +276,7 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    _log = value;
+                    _log = value + "\r\n";
                     //limit to n last characters so the app does not hang up on errors
                     if (_log.Length > n_MaxLogChars)
                     {
@@ -335,22 +335,25 @@ namespace ActivityTracker.Models
         public void AddLog(Vector3 accelometer, Vector3 magnetometer, Vector3 _gyroscopeData, Quaternion _orientationData, Location location)
         {
             _csvLog += $"{DateTime.Now.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss.fff")},{Name},{ActivityType},{accelometer.X},{accelometer.Y},{accelometer.Z},{magnetometer.X},{magnetometer.Y},{magnetometer.Z},{_gyroscopeData.X},{_gyroscopeData.Y},{_gyroscopeData.Z},{_orientationData.X},{_orientationData.Y},{_orientationData.Z},{_orientationData.W},{location?.Latitude},{location?.Longitude}\r\n";
-            //add ui series
-            Device.BeginInvokeOnMainThread(() =>
+            if (Configuration.Instance.IsTracking)
             {
-                var _newAcc = Math.Abs(accelometer.X) + Math.Abs(accelometer.Y) + Math.Abs(accelometer.Z);
-                _accelometer.Add(new ObservableValue(_newAcc - _lastAcc));
-                _lastAcc = _newAcc;
-                _magnetometer.Add(new ObservableValue(Math.Abs(magnetometer.X) + Math.Abs(magnetometer.Y) + Math.Abs(magnetometer.Z)));
-                if (_accelometer.Count > 100)
+                //add ui series
+                Device.BeginInvokeOnMainThread(() =>
                 {
-                    _accelometer.RemoveAt(0);
-                }
-                if (_magnetometer.Count > 100)
-                {
-                    _magnetometer.RemoveAt(0);
-                }
-            });
+                    var _newAcc = Math.Abs(accelometer.X) + Math.Abs(accelometer.Y) + Math.Abs(accelometer.Z);
+                    _accelometer.Add(new ObservableValue(_newAcc - _lastAcc));
+                    _lastAcc = _newAcc;
+                    _magnetometer.Add(new ObservableValue(Math.Abs(magnetometer.X) + Math.Abs(magnetometer.Y) + Math.Abs(magnetometer.Z)));
+                    if (_accelometer.Count > 100)
+                    {
+                        _accelometer.RemoveAt(0);
+                    }
+                    if (_magnetometer.Count > 100)
+                    {
+                        _magnetometer.RemoveAt(0);
+                    }
+                });
+            }
         }
         private string _csvLogHistory = "";
         public async Task SendResetLog(RunTypeE runtype)
@@ -380,14 +383,14 @@ namespace ActivityTracker.Models
                     {
                         Predictions[0].Value = "Error";
                     }
-                    Log = $"{Predictions[0].Value}" + '\n' + Log2;
+                    Log = $"{Predictions[0].Value}" + '\n' + Log;
                 }
 
                 var _selectedModel2 = SelectedModels[1].Value;
                 if (_selectedModel2 != ModelTypeE.None)
                 {
                     var _oldTime = DateTime.Now;
-                    string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel1);
+                    string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel2);
                     Predictions[1].Value = _prediction;
                     var _timeDiff = DateTime.Now - _oldTime;
                     if (Predictions[1].Value.Length > 20)
