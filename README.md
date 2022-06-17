@@ -1,6 +1,12 @@
-# Challenge Deel Learning 1
+# Challenge Deep Learning 1
 
-Dies ist das Projektrepository der Challange Deep Learning 1 (cdl1).
+Dies ist das Projektrepository der Challange Deep Learning 1 (cdl1) des FS22.
+
+Gruppenmitglieder: Pascal Berger, Raphael Strebel, Simon Luder, Ronny Schneeberger, Flavio Müller
+
+Dozent: Marcel Messerli
+
+## Übersicht
 
 In dieser Challange wurden Daten der folgenden Aktivitäten gesammelt und klassifiziert.
 - Sitzen
