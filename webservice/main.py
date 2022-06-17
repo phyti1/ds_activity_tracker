@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from sklearn.ensemble import RandomForestClassifier
 from tslearn.clustering import TimeSeriesKMeans
 from sklearn.model_selection import GridSearchCV
+from statistics import mode
 
 
 from math import sin, cos, sqrt, atan2, radians
@@ -254,7 +255,7 @@ port = int(9099)
 print(os.getcwd())
 model_path = "./Analyse/webservice/models/"
 if(not os.path.exists(model_path)):
-    model_path = "./models/"
+    model_path = "./webservice/models/"
     if(not os.path.exists(model_path)):
         model_path = "./test/cdl1/models/"
         if(not os.path.exists(model_path)):
@@ -331,7 +332,7 @@ def predict():
             # data preprocessing
             data = df_test
             data = prep_RS_FM(data)
-            pred = models["RF_Cluster"].predict(data)
+            pred = mode(models["RF_Cluster"].predict(data))
             labels = ['Sitting', 'Transport', 'Bicycling',
                       'Walking', 'Elevatoring', 'Jogging', 'Stairway']
             prediction = [labels[pred]]
