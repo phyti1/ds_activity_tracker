@@ -12,6 +12,11 @@ flask = "*"
 torch = "*"
 tslearn = "*"
 sklearn = "*"
+notebook = "*"
+seaborn = "*"
+console-progressbar = "*"
+tqdm = "*"
+wandb = "*"
 
 [dev-packages]
 
