@@ -10,6 +10,8 @@ ipykernel = "*"
 azure-storage-blob = "*"
 flask = "*"
 torch = "*"
+tslearn = "*"
+sklearn = "*"
 
 [dev-packages]
 

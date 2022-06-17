@@ -30,7 +30,7 @@ Mit den Daten wurden mehrere Machine Learning und Deep Learning Modelle optimier
 Die Challenge cdl1 wurde gemäss dem externen Dokument `Challangevereinbarung.pdf` in einem gemischten Setting bearbeitet. 
 Das Sammeln von Daten, das Abgabeprodukt und der Webservice wurde zusammen für alle fünf Personen gemacht.
 
-Das Data Cleaning und das Entwickeln, Optimieren und Evaluieren von Modellen wurde in zwei Einzelgruppen druchgeführt. 
+Das Data Cleansing und das Entwickeln, Optimieren und Evaluieren von Modellen wurde in zwei Einzelgruppen druchgeführt. 
 Dafür gibt es in diesem Repository zwei Ordner. 
 
 Die Arbeit von Simon, Raphael und Pascal ist im Ordner `Group_PB_RS_SL` zu finden, die Arbeit von Ronny und Flavio im Ordner `Group_RS_FM`.
@@ -43,7 +43,12 @@ Für das Sammeln der Aktivitätsdaten, sowie für das Anzeigen der Voraussage vo
 
 ## Installation
 
-Für das Einrichten der Xamarin App im Ordner `ActivityTracker` wird Visual Studio benötigt. Für die Einrichtung bitte folgenden Guide befolgen: https://docs.microsoft.com/en-us/xamarin/android/get-started/installation/.
+### ActivityTracker App
+
+Für das Einrichten der Android App im Ordner `ActivityTracker` wird Visual Studio mit Xamarin benötigt. Dafür bitte folgenden Guide befolgen: https://docs.microsoft.com/en-us/xamarin/android/get-started/installation/.
+Die App grundsätzlich für Android, iOS und UWP (Windows) kompilierbar. Ein Teil wurde nur für Android geschrieben, weshalb die App nur auf Android Geräten funktioniert und getestet ist. 
+
+### Python Environments
 
 Um die Python Abhängigkeiten der Ordner `Analyse` und `webservice` zu handhaben wurde `pipenv` verwendet. Zur Einrichtung des Environments müssen in einer Konsole folgende Befehle ausgeführt werden:
 
@@ -64,6 +69,11 @@ Der Webservice für die Vorhersage basiert auf Flask und ist für die Verwendung
 sudo cp ./webserice/cdl.service /etc/systemd/system/
 ```
 Dabei muss der absolute Pfad des Webservices unter `ExecStart` angepasst werden.
+
+### Reload Systemd
+```
+systemctl daemon-reload
+```
 
 ### Starten des Webservices
 ```
