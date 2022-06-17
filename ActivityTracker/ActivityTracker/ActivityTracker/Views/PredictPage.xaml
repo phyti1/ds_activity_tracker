@@ -47,11 +47,14 @@
                 </StackLayout>
             </Frame>
             <ScrollView Margin="20,0,20,0">
-                <StackLayout HorizontalOptions="FillAndExpand" Orientation="Horizontal">
-                    <Label HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
-
-                    <Label HorizontalTextAlignment="Center" HorizontalOptions="CenterAndExpand" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log2}" />
-                </StackLayout>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log}" />
+                    <Label Grid.Column="1" HorizontalTextAlignment="Center" Text="{Binding Source={x:Static m:Configuration.Instance}, Path=Log2}" />
+                </Grid>
             </ScrollView>
         </xct:DockLayout>
     </ContentPage.Content>

@@ -276,7 +276,7 @@ namespace ActivityTracker.Models
             {
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    _log = value + "\r\n";
+                    _log = value;
                     //limit to n last characters so the app does not hang up on errors
                     if (_log.Length > n_MaxLogChars)
                     {
@@ -379,10 +379,6 @@ namespace ActivityTracker.Models
                     string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel1);
                     Predictions[0].Value = _prediction;
                     var _timeDiff = DateTime.Now - _oldTime;
-                    if (Predictions[0].Value.Length > 20)
-                    {
-                        Predictions[0].Value = "Error";
-                    }
                     Log = $"{Predictions[0].Value}" + '\n' + Log;
                 }
 
@@ -393,10 +389,6 @@ namespace ActivityTracker.Models
                     string _prediction = await Database.PostPrediction(_csvLogHistory, _selectedModel2);
                     Predictions[1].Value = _prediction;
                     var _timeDiff = DateTime.Now - _oldTime;
-                    if (Predictions[1].Value.Length > 20)
-                    {
-                        Predictions[1].Value = "Error";
-                    }
                     Log2 = $"{Predictions[1].Value}" + '\n' + Log2;
                 }
 

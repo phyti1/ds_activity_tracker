@@ -67,8 +67,8 @@ namespace ActivityTracker.Models
                 //Thread.Sleep(10000);
                 Device.BeginInvokeOnMainThread(() =>
                 {
-                    Configuration.Instance.Log += "Measurement starting";
-                    Configuration.Instance.Log2 += "Measurement starting";
+                    Configuration.Instance.Log += "Measurement starting\n";
+                    Configuration.Instance.Log2 += "Measurement starting\n";
                 });
                 int _msCounter = 0;
                 try
@@ -100,7 +100,8 @@ namespace ActivityTracker.Models
                             {
                                 if (!ct.IsCancellationRequested)
                                 {
-                                    Configuration.Instance.Log += "no data";
+                                    Configuration.Instance.Log += "no data\n";
+                                    Configuration.Instance.Log2 += "no data\n";
                                 }
                             });
                         }
