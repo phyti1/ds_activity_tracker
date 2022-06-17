@@ -8,6 +8,8 @@ matplotlib = "*"
 pandas = "*"
 ipykernel = "*"
 azure-storage-blob = "*"
+flask = "*"
+torch = "*"
 
 [dev-packages]
 

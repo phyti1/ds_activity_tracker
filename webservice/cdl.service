@@ -1,0 +1,14 @@
+[Unit]
+Description=cdl1 project flask server
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/html/www.insidertips.ch/test/cdl1
+Environment=FLASK_CONFIG=production
+ExecStart=python3 /var/www/html/www.insidertips.ch/test/cdl1/main.py cdl:app
+#Restart=always
+
+
+[Install]
+WantedBy=multi-user.target
