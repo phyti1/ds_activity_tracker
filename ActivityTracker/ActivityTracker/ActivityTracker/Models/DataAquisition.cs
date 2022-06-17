@@ -50,6 +50,11 @@ namespace ActivityTracker.Models
 
         public void Start()
         {
+            //ignore start if aquisition process is already running.
+            if(Configuration.Instance.IsTracking || Configuration.Instance.IsPredicting)
+            {
+                return;
+            }
             Vibration.Vibrate(TimeSpan.FromSeconds(1));
             Configuration.Instance.MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
             Configuration.Instance.MeasIndex = 0;

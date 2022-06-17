@@ -25,9 +25,9 @@ Mit den Daten wurden mehrere Machine Learning und Deep Learning Modelle optimier
 | Ordner            | Beschreibung |
 |---                | --- |
 | ActivityTracker   | Xamarin Android App, um Aktivitäten aufzuzeichnen und diese vorherzusagen. Abgabeprodukt. |
-| Analyse           | Data Download und erstes Cleansing, Datengrundlage für die separaten Teams. |
-| Group_PB_RS_SL    | Data Cleansing und Modelle Gruppe: Raphael Strebel, Simon Luder und Pascal Berger |
-| Group_RS_FM       | Data Cleansing und Modelle Gruppe: Ronny Schneeberger und Flavio Müller |
+| Analyse           | Data Download und gemeinsames Data Cleansing, Datengrundlage für die separaten Teams. |
+| Group_PB_RS_SL    | Data Cleansing und Modelle der Gruppe: Raphael Strebel, Simon Luder und Pascal Berger. |
+| Group_RS_FM       | Data Cleansing und Modelle der Gruppe: Ronny Schneeberger und Flavio Müller. |
 | webservice        | Server Endpunkt verwendet für das Voraussagen von Aktivitäten. |
 
 
