@@ -11,6 +11,7 @@ namespace ActivityTracker.Models
 {
     public class DataAquisition
     {
+        private bool _isRunning = false;
         private Task _worker;
         private Task _geoWorker;
         private Location _location = Geolocation.GetLastKnownLocationAsync().Result;
@@ -51,10 +52,11 @@ namespace ActivityTracker.Models
         public void Start()
         {
             //ignore start if aquisition process is already running.
-            if(Configuration.Instance.IsTracking || Configuration.Instance.IsPredicting)
+            if(_isRunning)
             {
                 return;
             }
+            _isRunning = true;
             Vibration.Vibrate(TimeSpan.FromSeconds(1));
             Configuration.Instance.MeasGuid = Guid.NewGuid().ToString().Substring(0, 8);
             Configuration.Instance.MeasIndex = 0;
@@ -187,6 +189,10 @@ namespace ActivityTracker.Models
         }
         public void Stop()
         {
+            if(Configuration.Instance.IsTracking || Configuration.Instance.IsPredicting)
+            {
+                return;
+            }
             _src.Cancel();
             // wait for cancellation to complete
             Task.Run(() =>
@@ -195,6 +201,7 @@ namespace ActivityTracker.Models
                 {
                     Thread.Sleep(10);
                 }
+                _isRunning = false;
             }).Wait();
         }
 
